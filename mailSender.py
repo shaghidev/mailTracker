@@ -19,7 +19,7 @@ smtp_server = "mail.baltazargrad.com"
 smtp_port = 465
 pause_seconds = 180
 
-tracking_server_url = "https://tracker-yourapp.onrender.com"
+tracking_server_url = "https://mailtracker-7jvy.onrender.com"
 
 # --- Učitaj HTML ---
 html_file = "newsletter.html"
