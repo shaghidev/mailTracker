@@ -9,7 +9,7 @@ excel_file = "excel/test.xlsx"
 df = pd.read_excel(excel_file)
 
 # Pretpostavljamo da ima kolonu "email"
-emails = df['email'].tolist()
+emails = df['Email'].tolist()
 
 @app.route("/track_open")
 def track_open():
