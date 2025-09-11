@@ -4,10 +4,9 @@ import time
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import os
-import re
 
-# --- Config ---
-excel_file = "excel/test.xlsx"
+# --- CONFIG ---
+excel_file = "excel/test.xlsx"        # tvoj Excel s emailovima
 sheet_name = "Sheet1"
 email_column = "Email"
 
@@ -17,16 +16,16 @@ subject = "Pretvorite svoj grad u Baltazargrad!"
 
 smtp_server = "mail.baltazargrad.com"
 smtp_port = 465
-pause_seconds = 180
+pause_seconds = 180  # pauza između mailova
 
 tracking_server_url = "https://mailtracker-7jvy.onrender.com"
 
-# --- Učitaj HTML ---
+# --- Učitaj HTML template ---
 html_file = "mail/newsletter.html"
 with open(html_file, 'r', encoding='utf-8') as f:
     html_template = f.read()
 
-# --- Učitavanje Excel liste ---
+# --- Učitaj Excel listu ---
 df = pd.read_excel(excel_file, sheet_name=sheet_name)
 emails = df[email_column].dropna().tolist()
 
@@ -38,21 +37,45 @@ if os.path.exists(log_file):
     if "Email" in sent_df.columns:
         sent_emails = set(sent_df['Email'].tolist())
 
-# --- Funkcija za trackanje svih linkova ---
-def make_links_trackable(html, email, mail_id):
-    # Pronađi sve <a href="...">
-    def repl(match):
-        original_url = match.group(1)
-        return f'href="{tracking_server_url}/track_click?email={email}&mail_id={mail_id}&link_id=0&target={original_url}"'
-    return re.sub(r'href="(.*?)"', repl, html)
-
-# --- Slanje maila ---
-def send_email(to_email, mail_id=0):
-    html_content = html_template.replace(
+# --- Funkcija za zamjenu placeholder-a u HTML-u ---
+def prepare_html(email, mail_id):
+    html_content = html_template
+    # Tracking pixel
+    html_content = html_content.replace(
         "{{tracking_pixel}}",
-        f'<img src="{tracking_server_url}/track_open?email={to_email}&mail_id={mail_id}" width="1" height="1">'
+        f'{tracking_server_url}/track_open?email={email}&mail_id={mail_id}'
     )
-    html_content = make_links_trackable(html_content, to_email, mail_id)
+    # Trackable linkovi
+    html_content = html_content.replace(
+        "{{trackable_link_hero}}",
+        f'{tracking_server_url}/track_click?email={email}&mail_id={mail_id}&link=https://baltazargrad.com/hero'
+    )
+    html_content = html_content.replace(
+        "{{trackable_link_main}}",
+        f'{tracking_server_url}/track_click?email={email}&mail_id={mail_id}&link=https://baltazargrad.com'
+    )
+    html_content = html_content.replace(
+        "{{trackable_link_cta}}",
+        f'{tracking_server_url}/track_click?email={email}&mail_id={mail_id}&link=https://baltazargrad.com/cta'
+    )
+    # Trackable slike
+    html_content = html_content.replace(
+        "{{trackable_link_image1}}",
+        f'{tracking_server_url}/track_click?email={email}&mail_id={mail_id}&link=https://baltazargrad.com/image1'
+    )
+    html_content = html_content.replace(
+        "{{trackable_link_image2}}",
+        f'{tracking_server_url}/track_click?email={email}&mail_id={mail_id}&link=https://baltazargrad.com/image2'
+    )
+    html_content = html_content.replace(
+        "{{trackable_link_image3}}",
+        f'{tracking_server_url}/track_click?email={email}&mail_id={mail_id}&link=https://baltazargrad.com/image3'
+    )
+    return html_content
+
+# --- Funkcija za slanje maila ---
+def send_email(to_email, mail_id=0):
+    html_content = prepare_html(to_email, mail_id)
 
     msg = MIMEMultipart("alternative")
     msg['From'] = sender_email
@@ -66,7 +89,7 @@ def send_email(to_email, mail_id=0):
 
     print(f"[SENT] Mail poslan: {to_email}")
 
-# --- Glavna petlja ---
+# --- Glavna petlja slanja ---
 for idx, email in enumerate(emails, start=1):
     if email in sent_emails:
         continue
