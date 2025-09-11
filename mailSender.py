@@ -4,6 +4,7 @@ import time
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import os
+import re
 
 # --- Config ---
 excel_file = "test.xlsx"
@@ -18,10 +19,9 @@ smtp_server = "mail.baltazargrad.com"
 smtp_port = 465
 pause_seconds = 180
 
-# --- URL ngrok tunela ili lokalni test ---
-tracking_server_url = "https://4760b7921eea.ngrok-free.app"  # ili "http://127.0.0.1:5000" za lokalno testiranje
+tracking_server_url = "https://tracker-yourapp.onrender.com"
 
-# --- Učitaj HTML template ---
+# --- Učitaj HTML ---
 html_file = "newsletter.html"
 with open(html_file, 'r', encoding='utf-8') as f:
     html_template = f.read()
@@ -38,16 +38,21 @@ if os.path.exists(log_file):
     if "Email" in sent_df.columns:
         sent_emails = set(sent_df['Email'].tolist())
 
+# --- Funkcija za trackanje svih linkova ---
+def make_links_trackable(html, email, mail_id):
+    # Pronađi sve <a href="...">
+    def repl(match):
+        original_url = match.group(1)
+        return f'href="{tracking_server_url}/track_click?email={email}&mail_id={mail_id}&link_id=0&target={original_url}"'
+    return re.sub(r'href="(.*?)"', repl, html)
+
 # --- Slanje maila ---
 def send_email(to_email, mail_id=0):
     html_content = html_template.replace(
         "{{tracking_pixel}}",
-        f'<img src="{tracking_server_url}/track_open?email={to_email}&mail_id={mail_id}" width="1" height="1" style="display:none;">'
+        f'<img src="{tracking_server_url}/track_open?email={to_email}&mail_id={mail_id}" width="1" height="1">'
     )
-    html_content = html_content.replace(
-        "{{trackable_link}}",
-        f"{tracking_server_url}/track_click?email={to_email}&link_id=1&target=https://www.baltazargrad.com"
-    )
+    html_content = make_links_trackable(html_content, to_email, mail_id)
 
     msg = MIMEMultipart("alternative")
     msg['From'] = sender_email
