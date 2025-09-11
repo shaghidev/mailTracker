@@ -7,7 +7,7 @@ import os
 import re
 
 # --- Config ---
-excel_file = "test.xlsx"
+excel_file = "excel/test.xlsx"
 sheet_name = "Sheet1"
 email_column = "Email"
 
@@ -22,7 +22,7 @@ pause_seconds = 180
 tracking_server_url = "https://mailtracker-7jvy.onrender.com"
 
 # --- Učitaj HTML ---
-html_file = "newsletter.html"
+html_file = "mail/newsletter.html"
 with open(html_file, 'r', encoding='utf-8') as f:
     html_template = f.read()
 
