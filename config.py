@@ -1,7 +1,6 @@
-import os
 from pymongo import MongoClient
+import os
 
-MONGO_URI = os.environ.get("MONGO_URI")  # Postavi u Render environment variable
-client = MongoClient(MONGO_URI)
-db = client.get_database()  # automatski uzima default bazu iz URI
-events_collection = db["events"]
+client = MongoClient(os.environ["MONGO_URI"])
+db = client.get_database("mailTracker")  # ime baze mora biti ovdje
+events_collection = db.events

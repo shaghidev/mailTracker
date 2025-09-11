@@ -1,42 +1,37 @@
-import os
-from flask import Flask, request, redirect, send_file
-from config import events_collection
+from flask import Flask, request, send_file
+import pandas as pd
 from io import BytesIO
 
 app = Flask(__name__)
 
+# Učitaj Excel s email adresama
+excel_file = "excel/test.xlsx"
+df = pd.read_excel(excel_file)
 
-# Logging event u MongoDB
-def log_event(email, mail_id, event_type, url=None):
-    doc = {
-        "email": email,
-        "mail_id": mail_id,
-        "event_type": event_type,
-        "url": url
-    }
-    events_collection.insert_one(doc)
+# Pretpostavljamo da ima kolonu "email"
+emails = df['email'].tolist()
 
-# Tracking otvaranja maila
 @app.route("/track_open")
 def track_open():
     email = request.args.get("email")
-    mail_id = request.args.get("mail_id")
-    if email and mail_id:
-        log_event(email, mail_id, "open")
-    # Vrati 1x1 transparentnu sliku
-    img = BytesIO(b'\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00\xff\xff\xff\x21\xf9\x04\x01\x00\x00\x00\x00\x2c\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02\x44\x01\x00\x3b')
-    return send_file(img, mimetype='image/gif')
+    if email:
+        print(f"📬 Otvoreno: {email}")
+    # vraćamo 1x1 transparentni PNG
+    return send_file(
+        BytesIO(b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01"
+                b"\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
+                b"\x00\x00\x00\nIDATx\xdacd\xf8\xff\xff?\x00\x05\xfe\x02"
+                b"\xfeA^\x0b\x00\x00\x00\x00IEND\xaeB`\x82"),
+        mimetype='image/png'
+    )
 
-# Tracking klikova
 @app.route("/track_click")
 def track_click():
     email = request.args.get("email")
-    mail_id = request.args.get("mail_id")
-    url = request.args.get("url")
-    if email and mail_id and url:
-        log_event(email, mail_id, "click", url)
-        return redirect(url)
-    return "Invalid", 400
+    link = request.args.get("link")
+    if email and link:
+        print(f"🖱 Klik: {email} -> {link}")
+    return "Redirecting...", 302, {"Location": link or "#"}
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    app.run(host="0.0.0.0", port=5000, debug=True)
