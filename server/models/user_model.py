@@ -1,3 +1,5 @@
+#user_model.py
+
 from config import users_collection
 import bcrypt
 from datetime import datetime
@@ -15,6 +17,8 @@ def create_user(email: str, password: str):
 def find_user_by_email(email: str):
     return users_collection.find_one({"email": email})
 
-def verify_password(password: str, hashed_pw: str):
-    # Pretvaramo natrag u bytes za provjeru
-    return bcrypt.checkpw(password.encode(), hashed_pw.encode('utf-8'))
+def verify_password(password, hashed_pw):
+    # hashed_pw iz baze je bytes, ne treba encode
+    if isinstance(hashed_pw, str):
+        hashed_pw = hashed_pw.encode('utf-8')
+    return bcrypt.checkpw(password.encode(), hashed_pw)
