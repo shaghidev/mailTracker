@@ -21,12 +21,27 @@ smtp_port = 465
 pause_seconds = 180  # pauza između mailova
 
 tracking_server_url = "https://mailtracker-7jvy.onrender.com"
-campaign_id = "1"  # ID kampanje koju šalješ, može biti string ili ObjectId
 
-# --- Učitaj HTML template ---
-html_file = "mail/newsletter.html"
-with open(html_file, 'r', encoding='utf-8') as f:
-    html_template = f.read()
+# --- Kreiranje ili dohvat kampanje ---
+campaign_name = "Newsletter rujan 2025"
+campaign_html_file = "mail/newsletter.html"
+
+with open(campaign_html_file, 'r', encoding='utf-8') as f:
+    html_template_content = f.read()
+
+# Kreiraj kampanju u backendu
+try:
+    resp = requests.post(f"{tracking_server_url}/create_campaign", json={
+        "name": campaign_name,
+        "subject": subject,
+        "html_template": html_template_content
+    })
+    resp.raise_for_status()
+    campaign_id = resp.json()["campaign_id"]
+    print(f"[INFO] Kampanja kreirana s ID: {campaign_id}")
+except Exception as e:
+    print(f"[ERROR] Ne mogu kreirati kampanju: {e}")
+    exit(1)
 
 # --- Učitaj Excel listu ---
 df = pd.read_excel(excel_file, sheet_name=sheet_name)
@@ -59,7 +74,7 @@ def prepare_html(email, mail_id):
     email_enc = quote_plus(email)
     mail_id_enc = quote_plus(str(mail_id))
     
-    html_content = html_template
+    html_content = html_template_content
     # Tracking pixel
     html_content = html_content.replace(
         "{{tracking_pixel}}",
