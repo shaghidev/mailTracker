@@ -1,3 +1,4 @@
+// src/app/page.tsx
 "use client";
 import React from "react";
 import Link from "next/link";
@@ -17,12 +18,6 @@ const HomePage: React.FC = () => {
           className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
         >
           Go to Dashboard
-        </Link>
-        <Link
-          href="/dashboard"
-          className="bg-white text-blue-600 px-6 py-3 rounded-lg hover:bg-gray-100 transition-colors"
-        >
-          Learn More
         </Link>
       </div>
     </div>

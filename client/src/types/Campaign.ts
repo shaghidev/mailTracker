@@ -2,9 +2,11 @@
 export interface Campaign {
     id: string;
     name: string;
-    sent: number;
-    opened: number;
-    clicked: number;
+    subject: string;
+    html_template: string;
     createdAt: string;
+    sent?: number;
+    opened?: number;
+    clicked?: number;
   }
   

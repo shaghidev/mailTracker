@@ -103,6 +103,22 @@ def track_click():
 
     return redirect(link)
 
+# --- Dohvati sve kampanje ---
+@app.route("/api/campaigns", methods=["GET"])
+def get_all_campaigns():
+    campaigns = list(campaigns_collection.find())
+    result = []
+    for c in campaigns:
+        result.append({
+            "id": str(c["_id"]),
+            "name": c["name"],
+            "subject": c.get("subject", ""),
+            "html_template": c.get("html_template", ""),
+            "createdAt": c.get("created_at").isoformat()
+        })
+    return jsonify(result)
+
+
 # --- Praćenje poslanih mailova ---
 @app.route("/track_sent")
 def track_sent():

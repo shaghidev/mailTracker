@@ -2,7 +2,6 @@
 import React from "react";
 import { Campaign } from "@/types/Campaign";
 
-
 interface CampaignCardProps {
   campaign: Campaign;
 }
@@ -15,9 +14,9 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
         Created: {new Date(campaign.createdAt).toLocaleDateString()}
       </p>
       <div className="flex justify-between mt-2 text-sm">
-        <span>Sent: {campaign.sent}</span>
-        <span>Opened: {campaign.opened}</span>
-        <span>Clicked: {campaign.clicked}</span>
+        <span>Sent: {campaign.sent || 0}</span>
+        <span>Opened: {campaign.opened || 0}</span>
+        <span>Clicked: {campaign.clicked || 0}</span>
       </div>
     </div>
   );
