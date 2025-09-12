@@ -6,10 +6,11 @@ from datetime import datetime, timedelta
 
 def generate_jwt(user_id: str):
     payload = {
-        "user_id": user_id,
+        "user_id": str(user_id),
         "exp": datetime.utcnow() + timedelta(seconds=JWT_EXP_DELTA_SECONDS)
     }
-    return jwt.encode(payload, JWT_SECRET, algorithm="HS256")
+    token = jwt.encode(payload, JWT_SECRET, algorithm="HS256")
+    return token
 
 def register():
     data = request.json
