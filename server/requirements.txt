@@ -4,3 +4,4 @@ pymongo
 requests
 pandas
 openpyxl
+CORS
