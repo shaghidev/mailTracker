@@ -1,14 +1,9 @@
-# auth_middleware.py
 from functools import wraps
 from flask import request, jsonify
 import jwt
 from config import JWT_SECRET
 
 def auth_required(f):
-    """
-    Decorator koji provjerava JWT token iz Authorization headera.
-    Ako je token validan, prosljeđuje user_id funkciji.
-    """
     @wraps(f)
     def decorated(*args, **kwargs):
         token = request.headers.get("Authorization")

@@ -3,15 +3,13 @@ from models.user_model import create_user, find_user_by_email, verify_password
 import jwt
 from config import JWT_SECRET, JWT_EXP_DELTA_SECONDS
 from datetime import datetime, timedelta
-from bson import ObjectId
 
 def generate_jwt(user_id: str):
     payload = {
-        "user_id": str(user_id),
+        "user_id": user_id,
         "exp": datetime.utcnow() + timedelta(seconds=JWT_EXP_DELTA_SECONDS)
     }
-    token = jwt.encode(payload, JWT_SECRET, algorithm="HS256")
-    return token
+    return jwt.encode(payload, JWT_SECRET, algorithm="HS256")
 
 def register():
     data = request.json

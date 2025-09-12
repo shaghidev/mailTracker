@@ -18,3 +18,4 @@ users_collection = db.users  # nova kolekcija za korisnike
 # --- JWT ---
 JWT_SECRET = os.environ.get("JWT_SECRET", "supersecretkey")
 JWT_EXP_DELTA_SECONDS = 3600  # 1 sat
+
