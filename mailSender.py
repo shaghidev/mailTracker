@@ -18,10 +18,10 @@ sheet_name = "Sheet1"
 email_column = "Email"
 
 # SMTP podaci
-smtp_server = os.getenv("SMTP_HOST") or "mail.baltazargrad.com"
-smtp_port = int(os.getenv("SMTP_PORT") or 465)
-sender_email = os.getenv("SMTP_USER") or "stream@baltazargrad.com"
-sender_password = os.getenv("SMTP_PASS") or "7Q.-rdD@KMU$"
+smtp_server = os.getenv("SMTP_HOST") 
+smtp_port = int(os.getenv("SMTP_PORT"))
+sender_email = os.getenv("SMTP_USER") 
+sender_password = os.getenv("SMTP_PASS") 
 
 subject = "Pretvorite svoj grad u Baltazargrad!"
 pause_seconds = 180  # pauza između mailova

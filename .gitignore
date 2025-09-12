@@ -1,0 +1,16 @@
+# Osobne/konfiguracijske datoteke
+.env
+
+# Python specifično
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+
+# Logovi
+*.log
+
+# Virtualno okruženje
+.venv/
+env/
