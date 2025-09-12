@@ -3,8 +3,10 @@ from datetime import datetime
 from bson import ObjectId
 from config import campaigns_collection, mails_collection, events_collection
 import io
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)  # Omogućava sve domene
 
 # --- Kreiranje nove kampanje ---
 @app.route("/create_campaign", methods=["POST"])
