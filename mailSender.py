@@ -4,6 +4,8 @@ import time
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import os
+import requests
+
 
 # --- CONFIG ---
 excel_file = "excel/test.xlsx"        # tvoj Excel s emailovima
@@ -88,6 +90,13 @@ def send_email(to_email, mail_id=0):
         server.send_message(msg)
 
     print(f"[SENT] Mail poslan: {to_email}")
+
+    # pošalji event u tracking server
+    try:
+        requests.get(f"{tracking_server_url}/track_sent",
+                     params={"email": to_email, "mail_id": mail_id})
+    except Exception as e:
+        print(f"[WARN] Ne mogu logirati send u Mongo: {e}")
 
 # --- Glavna petlja slanja ---
 for idx, email in enumerate(emails, start=1):
