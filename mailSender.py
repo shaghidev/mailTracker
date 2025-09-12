@@ -3,33 +3,39 @@ import smtplib
 import time
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import os
 import requests
 from urllib.parse import quote_plus
+from datetime import datetime
+from dotenv import load_dotenv
+import os
+
+# --- Load .env ---
+load_dotenv()
 
 # --- CONFIG ---
 excel_file = "excel/test.xlsx"        # Excel s emailovima
 sheet_name = "Sheet1"
 email_column = "Email"
 
-sender_email = "stream@baltazargrad.com"
-sender_password = os.environ.get("SMTP_PASSWORD")  # sigurnije, koristi env var
-subject = "Pretvorite svoj grad u Baltazargrad!"
+# SMTP podaci
+smtp_server = os.getenv("SMTP_HOST") or "mail.baltazargrad.com"
+smtp_port = int(os.getenv("SMTP_PORT") or 465)
+sender_email = os.getenv("SMTP_USER") or "stream@baltazargrad.com"
+sender_password = os.getenv("SMTP_PASS") or "7Q.-rdD@KMU$"
 
-smtp_server = "mail.baltazargrad.com"
-smtp_port = 465
+subject = "Pretvorite svoj grad u Baltazargrad!"
 pause_seconds = 180  # pauza između mailova
 
 tracking_server_url = "https://mailtracker-7jvy.onrender.com"
 
-# --- Kreiranje ili dohvat kampanje ---
+# --- Kampanja ---
 campaign_name = "Newsletter rujan 2025"
 campaign_html_file = "mail/newsletter.html"
 
 with open(campaign_html_file, 'r', encoding='utf-8') as f:
     html_template_content = f.read()
 
-# Kreiraj kampanju u backendu
+# --- Kreiraj kampanju u backendu ---
 try:
     resp = requests.post(f"{tracking_server_url}/create_campaign", json={
         "name": campaign_name,
@@ -80,32 +86,19 @@ def prepare_html(email, mail_id):
         "{{tracking_pixel}}",
         f'{tracking_server_url}/track_open?email={email_enc}&mail_id={mail_id_enc}'
     )
-    # Trackable linkovi
-    html_content = html_content.replace(
-        "{{trackable_link_hero}}",
-        f'{tracking_server_url}/track_click?email={email_enc}&mail_id={mail_id_enc}&link=https://baltazargrad.com/hero'
-    )
-    html_content = html_content.replace(
-        "{{trackable_link_main}}",
-        f'{tracking_server_url}/track_click?email={email_enc}&mail_id={mail_id_enc}&link=https://baltazargrad.com'
-    )
-    html_content = html_content.replace(
-        "{{trackable_link_cta}}",
-        f'{tracking_server_url}/track_click?email={email_enc}&mail_id={mail_id_enc}&link=https://baltazargrad.com/cta'
-    )
-    # Trackable slike
-    html_content = html_content.replace(
-        "{{trackable_link_image1}}",
-        f'{tracking_server_url}/track_click?email={email_enc}&mail_id={mail_id_enc}&link=https://baltazargrad.com/image1'
-    )
-    html_content = html_content.replace(
-        "{{trackable_link_image2}}",
-        f'{tracking_server_url}/track_click?email={email_enc}&mail_id={mail_id_enc}&link=https://baltazargrad.com/image2'
-    )
-    html_content = html_content.replace(
-        "{{trackable_link_image3}}",
-        f'{tracking_server_url}/track_click?email={email_enc}&mail_id={mail_id_enc}&link=https://baltazargrad.com/image3'
-    )
+    # Trackable linkovi i slike
+    for name, url in {
+        "{{trackable_link_hero}}": "https://baltazargrad.com/hero",
+        "{{trackable_link_main}}": "https://baltazargrad.com",
+        "{{trackable_link_cta}}": "https://baltazargrad.com/cta",
+        "{{trackable_link_image1}}": "https://baltazargrad.com/image1",
+        "{{trackable_link_image2}}": "https://baltazargrad.com/image2",
+        "{{trackable_link_image3}}": "https://baltazargrad.com/image3",
+    }.items():
+        html_content = html_content.replace(
+            name,
+            f"{tracking_server_url}/track_click?email={email_enc}&mail_id={mail_id_enc}&link={url}"
+        )
     return html_content
 
 # --- Funkcija za slanje maila ---
@@ -118,11 +111,17 @@ def send_email(to_email, mail_id):
     msg['Subject'] = subject
     msg.attach(MIMEText(html_content, 'html'))
 
-    with smtplib.SMTP_SSL(smtp_server, smtp_port) as server:
-        server.login(sender_email, sender_password)
-        server.send_message(msg)
-
-    print(f"[SENT] Mail poslan: {to_email}")
+    try:
+        with smtplib.SMTP_SSL(smtp_server, smtp_port) as server:
+            server.login(sender_email, sender_password)
+            server.send_message(msg)
+        print(f"[SENT] Mail poslan: {to_email}")
+    except smtplib.SMTPAuthenticationError:
+        print(f"[ERROR] SMTP auth failed za {to_email}. Provjeri lozinku i username!")
+        return False
+    except Exception as e:
+        print(f"[ERROR] Neuspjelo slanje na {to_email}: {e}")
+        return False
 
     # pošalji event "sent" u backend
     try:
@@ -130,6 +129,8 @@ def send_email(to_email, mail_id):
                      params={"email": to_email, "mail_id": mail_id})
     except Exception as e:
         print(f"[WARN] Ne mogu logirati send u backend: {e}")
+    
+    return True
 
 # --- Glavna petlja slanja ---
 for email in emails:
@@ -140,12 +141,10 @@ for email in emails:
     if not mail_id:
         continue
 
-    try:
-        send_email(email, mail_id)
+    success = send_email(email, mail_id)
+    if success:
         with open(log_file, 'a') as f:
-            f.write(f"{email},{mail_id}\n")
+            f.write(f"{email},{mail_id},{datetime.utcnow().isoformat()}\n")
         sent_emails.add(email)
-    except Exception as e:
-        print(f"[ERROR] Neuspjelo slanje na {email}: {e}")
 
     time.sleep(pause_seconds)
