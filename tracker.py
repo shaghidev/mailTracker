@@ -1,7 +1,7 @@
-from flask import Flask, request, send_file, redirect
+from flask import Flask, request, send_file, redirect, jsonify
 from datetime import datetime
 from bson import ObjectId
-from config import events_collection
+from config import mails_collection, events_collection
 import io
 
 app = Flask(__name__)
@@ -18,7 +18,6 @@ def track_open():
         "timestamp": datetime.utcnow()
     })
 
-    # Vrati 1x1 transparentnu PNG sliku
     transparent_pixel = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR' \
                         b'\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06' \
                         b'\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00' \
@@ -40,7 +39,7 @@ def track_click():
         "timestamp": datetime.utcnow()
     })
 
-    return redirect(link)  # korisnika preusmjeri na originalni link
+    return redirect(link)
 
 @app.route("/track_sent")
 def track_sent():
@@ -55,3 +54,18 @@ def track_sent():
     })
 
     return {"status": "ok"}
+
+@app.route("/events/stats/<mail_id>")
+def get_mail_stats(mail_id):
+    total_sent = events_collection.count_documents({"mail_id": mail_id, "type": "sent"})
+    total_opened = len(events_collection.distinct("email", {"mail_id": mail_id, "type": "open"}))
+    total_clicked = len(events_collection.distinct("email", {"mail_id": mail_id, "type": "click"}))
+
+    return jsonify({
+        "mail_id": mail_id,
+        "sent": total_sent,
+        "opened": total_opened,
+        "clicked": total_clicked,
+        "open_rate": f"{(total_opened/total_sent*100) if total_sent else 0:.2f}%",
+        "click_rate": f"{(total_clicked/total_sent*100) if total_sent else 0:.2f}%"
+    })
