@@ -1,42 +1,26 @@
-// src/app/dashboard/page.tsx
-"use client";
-import React, { useEffect, useState } from "react";
-import CampaignCard from "@/components/CampaignCard/CampaignCard";
-import { getCampaigns } from "@/services/api";
-import { Campaign } from "@/types/Campaign";
+'use client';
+import { useAuth0 } from '@auth0/auth0-react';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
-const DashboardPage: React.FC = () => {
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [loading, setLoading] = useState(true);
+const DashboardPage = () => {
+  const { isAuthenticated, loginWithRedirect, isLoading } = useAuth0();
+  const router = useRouter();
 
   useEffect(() => {
-    const fetchCampaigns = async () => {
-      try {
-        const data = await getCampaigns();
-        setCampaigns(data);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchCampaigns();
-  }, []);
+    if (!isLoading && !isAuthenticated) {
+      // Ako korisnik nije prijavljen, preusmjeri na landing page
+      router.push('/');
+    }
+  }, [isAuthenticated, isLoading, router]);
+
+  if (isLoading) return <div>Loading...</div>;
+  if (!isAuthenticated) return null; // ili loader dok router push ne odradi
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">Dashboard - All Campaigns</h1>
-      {loading ? (
-        <p className="text-center mt-10">Loading campaigns...</p>
-      ) : campaigns.length === 0 ? (
-        <p>No campaigns yet.</p>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {campaigns.map((c) => (
-            <CampaignCard key={c.id} campaign={c} />
-          ))}
-        </div>
-      )}
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-6">
+      <h1 className="text-3xl font-bold mb-4">Dashboard</h1>
+      <p>Welcome! Here you can manage your email campaigns and track analytics.</p>
     </div>
   );
 };
