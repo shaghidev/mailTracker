@@ -1,16 +1,25 @@
-import { useCallback } from "react";
-import { useAuth0 } from "@auth0/auth0-react";
-import { fetchContactLists } from "@/services/api";
-import { ContactList } from "@/types/Contact";
+import { useState, useCallback } from 'react';
+import { useAuth0 } from '@auth0/auth0-react';
+import { ContactList } from '@/types/Contact';
+import * as contactService from '../services/contactService';
 
 export const useContacts = () => {
-  const { getAccessTokenSilently, isAuthenticated } = useAuth0();
+  const { getAccessTokenSilently } = useAuth0();
+  const [lists, setLists] = useState<ContactList[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const fetchLists = useCallback(async (): Promise<ContactList[]> => {
-    if (!isAuthenticated) return [];
-    const token = await getAccessTokenSilently();
-    return fetchContactLists(token);
-  }, [getAccessTokenSilently, isAuthenticated]);
+  const fetchLists = useCallback(async () => {
+    setLoading(true);
+    try {
+      const token = await getAccessTokenSilently();
+      const data = await contactService.fetchContactLists(token);
+      setLists(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [getAccessTokenSilently]);
 
-  return { fetchLists };
+  return { lists, loading, fetchLists, setLists };
 };
