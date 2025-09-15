@@ -3,7 +3,7 @@ from datetime import datetime
 from config import mails_collection, campaigns_collection, events_collection
 from utils.helpers import str_to_objectid
 
-bp = Blueprint("mails", __name__, strict_slashes=False)
+bp = Blueprint("mails", __name__)
 
 # --- CREATE MAIL ---
 @bp.route("/create_mail", methods=["POST"])

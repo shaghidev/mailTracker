@@ -4,7 +4,7 @@ from datetime import datetime
 from config import campaigns_collection, mails_collection, events_collection
 from utils.helpers import str_to_objectid
 
-bp = Blueprint('campaigns', __name__, strict_slashes=False)
+bp = Blueprint('campaigns', __name__)
 
 # --- CREATE CAMPAIGN ---
 @bp.route("/create_campaign", methods=["POST"])
