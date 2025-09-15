@@ -1,7 +1,7 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
-import { useContacts } from '@/hooks/useContacts';
+import { useContactLists } from '@/hooks/useContactLists';
 import { addContactList, deleteContactList } from '@/services/contactService';
 import ContactListCard from '@/components/ContactList/ContactListCard';
 import ImportContactsModal from '@/components/ContactList/ImportContactsModal';
@@ -9,17 +9,24 @@ import { ContactList } from '@/types/Contact';
 
 const ContactsPage = () => {
   const { isAuthenticated, getAccessTokenSilently } = useAuth0();
-  const { lists, loading, fetchLists } = useContacts();
+  const { lists, loading, fetchLists } = useContactLists();
   const [newListName, setNewListName] = useState('');
   const [selectedList, setSelectedList] = useState<ContactList | null>(null);
 
-  if (!isAuthenticated) return (
-    <div className="min-h-screen flex items-center justify-center bg-[#080D10] text-[#FFFFFF]">
-      <p className="text-lg text-[#A0AEC0]">Login to see contact lists</p>
-    </div>
-  );
+  useEffect(() => {
+    if (isAuthenticated) fetchLists();
+  }, [isAuthenticated, fetchLists]);
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#080D10] text-[#FFFFFF]">
+        <p className="text-lg text-[#A0AEC0]">Login to see contact lists</p>
+      </div>
+    );
+  }
 
   const handleAddList = async () => { 
+    if (!newListName.trim()) return;
     try {
       const token = await getAccessTokenSilently();
       await addContactList(newListName, token);
@@ -48,21 +55,27 @@ const ContactsPage = () => {
             onChange={(e) => setNewListName(e.target.value)}
             className="px-3 py-2 rounded-lg text-[#FFFFFF] bg-[#1F2937] placeholder-[#A0AEC0]"
           />
-          <button onClick={handleAddList} className="bg-[#22C55E] py-2 px-4 rounded-lg hover:bg-[#16A34A] transition-colors">Add</button>
+          <button
+            onClick={handleAddList}
+            className="bg-[#22C55E] py-2 px-4 rounded-lg hover:bg-[#16A34A] transition-colors"
+          >
+            Add
+          </button>
         </div>
       </div>
 
-      {loading ? <p className="text-[#A0AEC0]">Loading lists...</p> : (
+      {loading ? (
+        <p className="text-[#A0AEC0]">Loading lists...</p>
+      ) : (
         <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-{lists.map((list) => (
-  <ContactListCard
-    key={list.id}
-    list={list}
-    onView={(l: ContactList) => setSelectedList(l)}
-    onDelete={handleDeleteList}
-  />
-))}
-
+          {lists.map((list: ContactList) => (
+            <ContactListCard
+              key={list.id}
+              list={list}
+              onView={(l: ContactList) => setSelectedList(l)}
+              onDelete={handleDeleteList}
+            />
+          ))}
         </div>
       )}
 
