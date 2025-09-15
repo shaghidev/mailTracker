@@ -1,3 +1,4 @@
+#routes/mails.py
 from flask import Blueprint, request, send_file, redirect, jsonify
 from datetime import datetime
 from config import mails_collection, campaigns_collection, events_collection
