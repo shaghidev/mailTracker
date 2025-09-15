@@ -1,10 +1,12 @@
+# routes/campaigns.py
 from flask import Blueprint, request, jsonify
 from datetime import datetime
-from config import campaigns_collection, mails_collection
+from config import campaigns_collection, mails_collection, events_collection
 from utils.helpers import str_to_objectid
 
-bp = Blueprint('campaigns', __name__)
+bp = Blueprint('campaigns', __name__, strict_slashes=False)
 
+# --- CREATE CAMPAIGN ---
 @bp.route("/create_campaign", methods=["POST"])
 def create_campaign():
     data = request.json
@@ -25,7 +27,8 @@ def create_campaign():
     result = campaigns_collection.insert_one(campaign)
     return jsonify({"status": "ok", "campaign_id": str(result.inserted_id)})
 
-@bp.route("/api/campaigns", methods=["GET"])
+# --- GET ALL CAMPAIGNS ---
+@bp.route("/", methods=["GET"])
 def get_all_campaigns():
     campaigns = list(campaigns_collection.find())
     result = []
@@ -39,7 +42,8 @@ def get_all_campaigns():
         })
     return jsonify(result)
 
-@bp.route("/campaign_stats/<campaign_id>")
+# --- GET CAMPAIGN STATS ---
+@bp.route("/campaign_stats/<campaign_id>", methods=["GET"])
 def campaign_stats(campaign_id):
     campaign_obj_id = str_to_objectid(campaign_id)
     if not campaign_obj_id:
@@ -48,7 +52,6 @@ def campaign_stats(campaign_id):
     mails = list(mails_collection.find({"campaign_id": campaign_obj_id}))
     mail_ids = [m["_id"] for m in mails]
 
-    from config import events_collection
     opens = events_collection.count_documents({"mail_id": {"$in": mail_ids}, "type": "open"})
     clicks = events_collection.count_documents({"mail_id": {"$in": mail_ids}, "type": "click"})
     total_mails = len(mails)

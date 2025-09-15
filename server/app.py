@@ -14,7 +14,7 @@ CORS(
 
 # --- tvoji blueprinti ---
 from routes import campaigns, mails, contacts
-app.register_blueprint(campaigns.bp, url_prefix="/api/campaigns")
+app.register_blueprint(campaigns.bp, url_prefix="/")
 app.register_blueprint(mails.bp, url_prefix="/api/mails")
 app.register_blueprint(contacts.bp, url_prefix="/api/contact_lists")
 
