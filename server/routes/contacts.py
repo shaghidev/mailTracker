@@ -93,9 +93,13 @@ def delete_contact(list_id, email):
     return jsonify({"status": "ok"})
 
 
-# POST import contacts from CSV to a list
+
+# POST import contacts from Excel to a list
 @bp.route("/<list_id>/contacts/import", methods=["POST"])
 def import_contacts(list_id):
+    from openpyxl import load_workbook
+    from io import BytesIO
+
     list_obj_id = str_to_objectid(list_id)
     if not list_obj_id:
         return jsonify({"status": "error", "message": "Invalid ID"}), 400
@@ -104,19 +108,35 @@ def import_contacts(list_id):
         return jsonify({"status": "error", "message": "No file uploaded"}), 400
 
     file = request.files["file"]
-    stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
-    reader = csv.DictReader(stream)
-    imported_contacts = []
-    for row in reader:
-        if "email" in row and row["email"]:
-            contact = {"email": row["email"], "name": row.get("name", "")}
-            imported_contacts.append(contact)
 
-    if imported_contacts:
-        contact_lists_collection.update_one(
-            {"_id": list_obj_id},
-            {"$push": {"contacts": {"$each": imported_contacts}}}
-        )
+    if not (file.filename.endswith(".xlsx") or file.filename.endswith(".xls")):
+        return jsonify({"status": "error", "message": "Only Excel files are supported"}), 415
 
-    return jsonify({"status": "ok", "imported": len(imported_contacts)})
+    try:
+        wb = load_workbook(filename=BytesIO(file.read()))
+        sheet = wb.active
+
+        headers = [cell.value for cell in sheet[1]]  # prvi red je header
+        imported_contacts = []
+
+        for row in sheet.iter_rows(min_row=2, values_only=True):
+            row_dict = dict(zip(headers, row))
+            if row_dict.get("email"):
+                contact = {
+                    "email": str(row_dict.get("email")).strip(),
+                    "name": str(row_dict.get("name") or "").strip()
+                }
+                imported_contacts.append(contact)
+
+        if imported_contacts:
+            contact_lists_collection.update_one(
+                {"_id": list_obj_id},
+                {"$push": {"contacts": {"$each": imported_contacts}}}
+            )
+
+        return jsonify({"status": "ok", "imported": len(imported_contacts)})
+
+    except Exception as e:
+        print("Error importing Excel:", e)
+        return jsonify({"status": "error", "message": "Failed to import Excel"}), 500
 

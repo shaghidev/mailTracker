@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import { ContactList, Contact } from '@/types/Contact';
+import * as contactService from '@/services/contactService';
+import { useAuth0 } from '@auth0/auth0-react';
 import axios from "axios";
 interface Props {
   list: ContactList;
@@ -62,7 +64,9 @@ const mapRowToContact = (row: Record<string, unknown>): Contact => {
 
 
 const ImportContactsModal: React.FC<Props> = ({ list, onClose, onImported }) => {
+  const { getAccessTokenSilently } = useAuth0();
   const [contactsPreview, setContactsPreview] = useState<Contact[]>([]);
+  const [filteredContacts, setFilteredContacts] = useState<Contact[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -76,61 +80,56 @@ const ImportContactsModal: React.FC<Props> = ({ list, onClose, onImported }) => 
   };
 
 const parseFile = async (file: File) => {
-  let rawRows: Record<string, unknown>[] = [];
-
-  if (file.type.includes("csv")) {
-    const text = await file.text();
-    const parsed = Papa.parse<Record<string, unknown>>(text, { header: true });
-    rawRows = parsed.data;
-  } else {
-    const data = await file.arrayBuffer();
-    const workbook = XLSX.read(data);
-    const sheetName = workbook.SheetNames[0];
-    rawRows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]) as Record<string, unknown>[];
-  }
-
-  console.log("Raw rows:", rawRows);
+  const data = await file.arrayBuffer();
+  const workbook = XLSX.read(data);
+  const sheetName = workbook.SheetNames[0];
+  const rawRows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]) as Record<string, unknown>[];
 
   const contacts = rawRows
     .map(mapRowToContact)
-    .filter(c => !!c.name || !!c.email); // minimalno ime i email
-
-  console.log("Mapped contacts:", contacts);
+    .filter(c => !!c.email); // minimalno email
 
   const existingEmails = new Set((list.emails ?? []).map(e => e.toLowerCase()));
   const unique = contacts.filter(c => !existingEmails.has(c.email.toLowerCase()));
-
-  console.log("Unique contacts:", unique);
 
   if (unique.length === 0) {
     alert("No new contacts found in the file!");
   }
 
   setContactsPreview(unique.slice(0, 20));
+  setFilteredContacts(unique);
 };
 
 
+
 const handleImport = async () => {
-  if (!selectedFile) return; // umjesto "file" koristiš state varijablu
+  if (!selectedFile) return;
 
   const formData = new FormData();
   formData.append("file", selectedFile);
 
   try {
+    const token = await getAccessTokenSilently();
     await axios.post(
-      `${API_URL}/api/contact_lists/${list.id}/contacts/import`, // umjesto listId koristiš list._id
+      `${API_URL}/api/contact_lists/${list.id}/contacts/import`,
       formData,
-      { headers: { "Content-Type": "multipart/form-data" } }
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      }
     );
 
     alert("Import successful!");
-    onImported(); // obavijesti parent komponentu da je gotovo
+    onImported();
     onClose();
   } catch (err) {
     console.error("Import error:", err);
     alert("Import failed!");
   }
 };
+
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
@@ -140,11 +139,12 @@ const handleImport = async () => {
         </h2>
 
         <input
-          type="file"
-          accept=".csv, .xlsx, .xls"
-          onChange={handleFileChange}
-          className="mb-4 w-full text-sm"
-        />
+  type="file"
+  accept=".xlsx,.xls"
+  onChange={handleFileChange}
+  className="mb-4 w-full text-sm"
+/>
+
 
         {contactsPreview.length > 0 ? (
           <div className="mb-4 border border-gray-600 rounded p-2 max-h-60 overflow-auto">
