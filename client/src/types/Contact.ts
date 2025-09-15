@@ -1,8 +1,17 @@
 export interface Contact {
-  id: string;
+  id?: string;
   name: string;
   email: string;
+  company?: string;
+  product?: string;
+  address?: string;
+  website?: string;
+  phone?: string;
+  title?: string;
+  city?: string;
+  country?: string;
 }
+
 
 export interface ContactList {
   id: string;

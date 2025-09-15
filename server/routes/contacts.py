@@ -93,22 +93,20 @@ def delete_contact(list_id, email):
     return jsonify({"status": "ok"})
 
 
-# --- Import contacts from CSV ---
+# POST import contacts from CSV to a list
 @bp.route("/<list_id>/contacts/import", methods=["POST"])
 def import_contacts(list_id):
     list_obj_id = str_to_objectid(list_id)
     if not list_obj_id:
         return jsonify({"status": "error", "message": "Invalid ID"}), 400
 
-    if "file" not in request.files:
-        return jsonify({"status": "error", "message": "No file uploaded"}), 400
+    data = request.json
+    if not data or "contacts" not in data:
+        return jsonify({"status": "error", "message": "No contacts provided"}), 400
 
-    file = request.files["file"]
-    stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
-    reader = csv.DictReader(stream)
     imported_contacts = []
-    for row in reader:
-        if "email" in row and row["email"]:
+    for row in data["contacts"]:
+        if row.get("email"):
             contact = {"email": row["email"], "name": row.get("name", "")}
             imported_contacts.append(contact)
 

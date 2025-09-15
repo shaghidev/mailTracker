@@ -30,7 +30,10 @@ const ContactListPage = () => {
 
   return (
     <div className="min-h-screen p-8 bg-[#080D10] text-white">
-      <button onClick={() => router.push('/contacts')} className="mb-4 bg-[#2979FF] px-4 py-2 rounded hover:bg-[#1E63D8]">
+      <button
+        onClick={() => router.push('/contacts')}
+        className="mb-4 bg-[#2979FF] px-4 py-2 rounded hover:bg-[#1E63D8]"
+      >
         Back to Lists
       </button>
 
@@ -38,7 +41,10 @@ const ContactListPage = () => {
 
       <AddContactForm onAdd={addContact} />
 
-      <button onClick={() => setShowImport(true)} className="mb-4 bg-[#FFBD00] text-black px-4 py-2 rounded hover:bg-[#E6AC00]">
+      <button
+        onClick={() => setShowImport(true)}
+        className="mb-4 bg-[#FFBD00] text-black px-4 py-2 rounded hover:bg-[#E6AC00]"
+      >
         Import CSV/Excel
       </button>
 
@@ -47,12 +53,11 @@ const ContactListPage = () => {
       )}
 
       {showImport && (
-<ImportContactsModal
-  list={{ id: listId, name: "Your list name", emails: contacts.map(c => c.email) }} // <-- ovo treba imati id, name i emails
-  onClose={() => setShowImport(false)}
-  onImported={() => fetchContacts()}
-/>
-
+        <ImportContactsModal
+          list={{ id: listId, name: "Your list name", emails: contacts.map(c => c.email) }}
+          onClose={() => setShowImport(false)}
+          onImported={() => fetchContacts()}
+        />
       )}
     </div>
   );
