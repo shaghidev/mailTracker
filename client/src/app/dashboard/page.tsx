@@ -14,18 +14,12 @@ const DashboardPage = () => {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loadingCampaigns, setLoadingCampaigns] = useState(true);
 
-  // ----------------------------
   // Preusmjeravanje korisnika
-  // ----------------------------
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push('/');
-    }
+    if (!isLoading && !isAuthenticated) router.push('/');
   }, [isLoading, isAuthenticated, router]);
 
-  // ----------------------------
   // Dohvat kampanja
-  // ----------------------------
   useEffect(() => {
     if (isAuthenticated) {
       setLoadingCampaigns(true);
@@ -36,28 +30,31 @@ const DashboardPage = () => {
     }
   }, [isAuthenticated, fetchCampaigns]);
 
-  // ----------------------------
-  // Loader dok Auth0 učitava
-  // ----------------------------
+  // Loader
   if (isLoading || (!isAuthenticated && !loadingCampaigns)) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
-  // ----------------------------
-  // Dashboard content
-  // ----------------------------
   return (
-    <div className="min-h-screen flex flex-col items-center bg-gray-100 p-6">
-      <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
+    <div className="min-h-screen flex flex-col items-center bg-gray-50 p-6">
+      <div className="w-full max-w-6xl flex justify-between items-center mb-6">
+        <h1 className="text-4xl font-extrabold text-gray-800">Dashboard</h1>
+        <button
+          onClick={() => router.push('/dashboard/new')}
+          className="bg-blue-600 text-white px-5 py-2 rounded-lg shadow hover:bg-blue-700 transition-colors"
+        >
+          + New Campaign
+        </button>
+      </div>
 
       {loadingCampaigns ? (
-        <p className="text-gray-700">Loading campaigns...</p>
+        <p className="text-gray-600">Loading campaigns...</p>
       ) : campaigns.length === 0 ? (
-        <p className="text-gray-700">No campaigns found.</p>
+        <p className="text-gray-600">No campaigns found.</p>
       ) : (
         <div className="w-full max-w-6xl grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {campaigns.map((c) => (

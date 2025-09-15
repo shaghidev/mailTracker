@@ -14,6 +14,8 @@ campaigns_collection = db.campaigns
 mails_collection = db.mails
 events_collection = db.events
 users_collection = db.users  # nova kolekcija za korisnike
+contact_lists_collection = db["contact_lists"]  # <--- dodano
+
 
 # --- JWT ---
 JWT_SECRET = os.environ.get("JWT_SECRET", "supersecretkey")

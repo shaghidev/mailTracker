@@ -10,14 +10,22 @@ const Navbar = () => {
   return (
     <nav className="bg-[#1F2937] text-white shadow-md p-4 flex justify-between items-center">
       <h1 className="text-xl font-bold">Email Marketing</h1>
-      <div className="space-x-4">
+      <div className="space-x-4 flex items-center">
+        <Link href="/" className="hover:text-[#2979FF]">
+          Home
+        </Link>
         {isAuthenticated && (
-          <Link href="/dashboard" className="hover:text-[#2979FF]">
-            Dashboard
-          </Link>
+          <>
+            <Link href="/dashboard" className="hover:text-[#2979FF]">
+              Dashboard
+            </Link>
+            <Link href="/contacts" className="hover:text-[#2979FF]">
+              Contacts
+            </Link>
+            <LogoutButton />
+          </>
         )}
-        <Link href="/" className="hover:text-[#2979FF]">Home</Link>
-        {isAuthenticated ? <LogoutButton /> : <LoginButton />}
+        {!isAuthenticated && <LoginButton />}
       </div>
     </nav>
   );

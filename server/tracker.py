@@ -1,7 +1,7 @@
 from flask import Flask, request, send_file, redirect, jsonify
 from datetime import datetime
 from bson import ObjectId
-from config import campaigns_collection, mails_collection, events_collection
+from config import campaigns_collection, mails_collection, events_collection, contact_lists_collection
 import io
 from flask_cors import CORS
 
@@ -162,6 +162,19 @@ def campaign_stats(campaign_id):
         "opens": opens,
         "clicks": clicks
     })
+    
+@app.route("/api/contact_lists", methods=["GET"])
+def get_contact_lists():
+    lists = list(contact_lists_collection.find())
+    result = []
+    for l in lists:
+        result.append({
+            "id": str(l["_id"]),
+            "name": l["name"],
+            "emails": l.get("emails", [])
+        })
+    return jsonify(result)
+
 
 if __name__ == "__main__":
     app.run(debug=True)
