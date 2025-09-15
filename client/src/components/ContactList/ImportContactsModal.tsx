@@ -1,20 +1,20 @@
 'use client';
 import React, { useState } from 'react';
-import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import { ContactList, Contact } from '@/types/Contact';
-import * as contactService from '@/services/contactService';
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from "axios";
+import ContactCards from './ContactCards';
+import ContactTable from './ContactListTable';
+
 interface Props {
   list: ContactList;
   onClose: () => void;
   onImported: () => void;
 }
 
-const API_URL = "https://mailtracker-7jvy.onrender.com"; // ili iz env varijable
+const API_URL = "https://mailtracker-7jvy.onrender.com";
 
-// Mapiranje 10 najčešćih polja
 const columnMap: Record<string, string[]> = {
   name: ["Name", "Full Name", "Ime", "Naziv"],
   email: ["Email", "Email Address", "E-mail", "Mail", "email"],
@@ -30,9 +30,8 @@ const columnMap: Record<string, string[]> = {
 
 const mapRowToContact = (row: Record<string, unknown>): Contact => {
   const c: Partial<Contact> = {};
-
-  // normaliziraj ključeve: trim + lowercase
   const rowNormalized: Record<string, string> = {};
+
   for (const key in row) {
     const val = row[key];
     if (val !== undefined && val !== null) {
@@ -43,7 +42,6 @@ const mapRowToContact = (row: Record<string, unknown>): Contact => {
   for (const key in columnMap) {
     const possibleNames = columnMap[key];
     for (const col of possibleNames) {
-      // traži normalizirani ključ
       const value = rowNormalized[col.toLowerCase()];
       if (value) {
         c[key as keyof Contact] = value;
@@ -52,131 +50,112 @@ const mapRowToContact = (row: Record<string, unknown>): Contact => {
     }
   }
 
-  // fallback: ako nema name, koristi email prije @
-  if (!c.name && c.email) {
-    c.name = (c.email as string).split("@")[0];
-  }
-
+  if (!c.name && c.email) c.name = (c.email as string).split("@")[0];
   return c as Contact;
 };
-
-
-
 
 const ImportContactsModal: React.FC<Props> = ({ list, onClose, onImported }) => {
   const { getAccessTokenSilently } = useAuth0();
   const [contactsPreview, setContactsPreview] = useState<Contact[]>([]);
   const [filteredContacts, setFilteredContacts] = useState<Contact[]>([]);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-
-    setSelectedFile(file);
     parseFile(file);
-    
   };
 
-const parseFile = async (file: File) => {
-  const data = await file.arrayBuffer();
-  const workbook = XLSX.read(data);
-  const sheetName = workbook.SheetNames[0];
-  const rawRows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]) as Record<string, unknown>[];
+  const parseFile = async (file: File) => {
+    const data = await file.arrayBuffer();
+    const workbook = XLSX.read(data);
+    const sheetName = workbook.SheetNames[0];
+    const rawRows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]) as Record<string, unknown>[];
 
-  const contacts = rawRows
-    .map(mapRowToContact)
-    .filter(c => !!c.email); // minimalno email
+    // mapiranje i filtriranje po emailu
+    const contacts = rawRows.map(mapRowToContact).filter(c => !!c.email);
+    const existingEmails = new Set((list.emails ?? []).map(e => e.toLowerCase()));
 
-  const existingEmails = new Set((list.emails ?? []).map(e => e.toLowerCase()));
-  const unique = contacts.filter(c => !existingEmails.has(c.email.toLowerCase()));
+    const uniqueContacts: Contact[] = [];
+    const seen = new Set<string>();
 
-  if (unique.length === 0) {
-    alert("No new contacts found in the file!");
-  }
-
-  setContactsPreview(unique.slice(0, 20));
-  setFilteredContacts(unique);
-};
-
-
-
-const handleImport = async () => {
-  if (!selectedFile) return;
-
-  const formData = new FormData();
-  formData.append("file", selectedFile);
-
-  try {
-    const token = await getAccessTokenSilently();
-    await axios.post(
-      `${API_URL}/api/contact_lists/${list.id}/contacts/import`,
-      formData,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
+    contacts.forEach(c => {
+      const emailLower = c.email.toLowerCase();
+      if (!existingEmails.has(emailLower) && !seen.has(emailLower)) {
+        uniqueContacts.push(c);
+        seen.add(emailLower);
       }
-    );
+    });
 
-    alert("Import successful!");
-    onImported();
-    onClose();
-  } catch (err) {
-    console.error("Import error:", err);
-    alert("Import failed!");
-  }
-};
+    if (uniqueContacts.length === 0) alert("No new contacts found in the file!");
 
+    setContactsPreview(uniqueContacts.slice(0, 20));
+    setFilteredContacts(uniqueContacts);
+  };
+
+  const handleImport = async () => {
+    if (filteredContacts.length === 0) {
+      alert("No new contacts to import!");
+      return;
+    }
+
+    try {
+      const token = await getAccessTokenSilently();
+
+      const res = await axios.post(
+        `${API_URL}/api/contact_lists/${list.id}/contacts/import`,
+        { contacts: filteredContacts }, // šaljemo samo filtrirane kontakte
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const importedCount = res.data.imported || filteredContacts.length;
+      alert(`Import successful! ${importedCount} contacts added.`);
+
+      onImported();
+      onClose();
+    } catch (err) {
+      console.error("Import error:", err);
+      alert("Import failed!");
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-      <div className="bg-[#1F2937] p-6 rounded-2xl w-[90%] max-w-lg max-h-[90vh] overflow-auto">
+      <div className="bg-[#1F2937] p-6 rounded-2xl w-[90%] max-w-3xl max-h-[90vh] overflow-auto">
         <h2 className="text-2xl font-bold text-[#FFBD00] mb-4">
           Import Contacts to {list.name}
         </h2>
 
         <input
-  type="file"
-  accept=".xlsx,.xls"
-  onChange={handleFileChange}
-  className="mb-4 w-full text-sm"
-/>
+          type="file"
+          accept=".xlsx,.xls"
+          onChange={handleFileChange}
+          className="mb-4 w-full text-sm"
+        />
 
-
-        {contactsPreview.length > 0 ? (
-          <div className="mb-4 border border-gray-600 rounded p-2 max-h-60 overflow-auto">
+        {contactsPreview.length > 0 && (
+          <div className="mb-4">
             <p className="text-gray-300 mb-2 font-semibold">
-              Preview ({contactsPreview.length} contacts shown)
+              Preview ({contactsPreview.length} contacts)
             </p>
-            <table className="w-full text-sm text-left text-white">
-              <thead>
-                <tr className="border-b border-gray-500">
-                  <th className="px-2 py-1">Name</th>
-                  <th className="px-2 py-1">Email</th>
-                  <th className="px-2 py-1">Company</th>
-                  <th className="px-2 py-1">Product</th>
-                </tr>
-              </thead>
-              <tbody>
-                {contactsPreview.map((c, idx) => (
-                  <tr key={idx} className="border-b border-gray-700">
-                    <td className="px-2 py-1">{c.name}</td>
-                    <td className="px-2 py-1">{c.email}</td>
-                    <td className="px-2 py-1">{c.company || '-'}</td>
-                    <td className="px-2 py-1">{c.product || '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <ContactCards contacts={contactsPreview} />
+            <div className="mt-4">
+              <ContactTable
+                contacts={contactsPreview}
+                onDelete={(email) => {
+                  setContactsPreview(prev => prev.filter(c => c.email !== email));
+                  setFilteredContacts(prev => prev.filter(c => c.email !== email));
+                }}
+              />
+            </div>
           </div>
-        ) : (
-          <p className="text-gray-400 mb-2">No valid contacts found.</p>
         )}
 
-        <div className="flex justify-end gap-2 mt-2">
+        <div className="flex justify-end gap-2 mt-4">
           <button
             onClick={onClose}
             className="bg-[#EF4444] py-2 px-4 rounded-lg hover:bg-[#DC2626] transition-colors"

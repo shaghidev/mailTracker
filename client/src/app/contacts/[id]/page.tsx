@@ -56,7 +56,7 @@ const ContactListPage = () => {
         <ImportContactsModal
           list={{ id: listId, name: "Your list name", emails: contacts.map(c => c.email) }}
           onClose={() => setShowImport(false)}
-          onImported={() => fetchContacts()}
+          onImported={() => fetchContacts()} // refresha listu kontakata nakon importa
         />
       )}
     </div>

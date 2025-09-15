@@ -4,14 +4,14 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { useContactLists } from '@/hooks/useContactLists';
 import { addContactList, deleteContactList } from '@/services/contactService';
 import ContactListCard from '@/components/ContactList/ContactListCard';
-import ImportContactsModal from '@/components/ContactList/ImportContactsModal';
 import { ContactList } from '@/types/Contact';
+import { useRouter } from 'next/navigation';
 
 const ContactsPage = () => {
   const { isAuthenticated, getAccessTokenSilently } = useAuth0();
   const { lists, loading, fetchLists } = useContactLists();
   const [newListName, setNewListName] = useState('');
-  const [selectedList, setSelectedList] = useState<ContactList | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     if (isAuthenticated) fetchLists();
@@ -69,22 +69,15 @@ const ContactsPage = () => {
       ) : (
         <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {lists.map((list: ContactList) => (
-            <ContactListCard
-              key={list.id}
-              list={list}
-              onView={(l: ContactList) => setSelectedList(l)}
-              onDelete={handleDeleteList}
-            />
+           <ContactListCard
+  key={list.id}
+  list={list}
+  onView={() => router.push(`/contacts/${list.id}`)} // OVDJE
+  onDelete={handleDeleteList}
+/>
+
           ))}
         </div>
-      )}
-
-      {selectedList && (
-        <ImportContactsModal
-          list={selectedList}
-          onClose={() => setSelectedList(null)}
-          onImported={fetchLists}
-        />
       )}
     </div>
   );
