@@ -100,13 +100,15 @@ def import_contacts(list_id):
     if not list_obj_id:
         return jsonify({"status": "error", "message": "Invalid ID"}), 400
 
-    data = request.json
-    if not data or "contacts" not in data:
-        return jsonify({"status": "error", "message": "No contacts provided"}), 400
+    if "file" not in request.files:
+        return jsonify({"status": "error", "message": "No file uploaded"}), 400
 
+    file = request.files["file"]
+    stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
+    reader = csv.DictReader(stream)
     imported_contacts = []
-    for row in data["contacts"]:
-        if row.get("email"):
+    for row in reader:
+        if "email" in row and row["email"]:
             contact = {"email": row["email"], "name": row.get("name", "")}
             imported_contacts.append(contact)
 
@@ -117,3 +119,4 @@ def import_contacts(list_id):
         )
 
     return jsonify({"status": "ok", "imported": len(imported_contacts)})
+

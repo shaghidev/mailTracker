@@ -3,8 +3,6 @@ import React, { useState } from 'react';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import { ContactList, Contact } from '@/types/Contact';
-import * as contactService from '@/services/contactService';
-import { useAuth0 } from '@auth0/auth0-react';
 import axios from "axios";
 interface Props {
   list: ContactList;
@@ -64,9 +62,7 @@ const mapRowToContact = (row: Record<string, unknown>): Contact => {
 
 
 const ImportContactsModal: React.FC<Props> = ({ list, onClose, onImported }) => {
-  const { getAccessTokenSilently } = useAuth0();
   const [contactsPreview, setContactsPreview] = useState<Contact[]>([]);
-  const [filteredContacts, setFilteredContacts] = useState<Contact[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -111,7 +107,6 @@ const parseFile = async (file: File) => {
   }
 
   setContactsPreview(unique.slice(0, 20));
-  setFilteredContacts(unique);
 };
 
 
