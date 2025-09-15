@@ -1,4 +1,3 @@
-// hooks/useContactLists.ts
 import { useState, useCallback } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { ContactList } from '@/types/Contact';
@@ -19,5 +18,21 @@ export const useContactLists = () => {
     finally { setLoading(false); }
   }, [getAccessTokenSilently]);
 
-  return { lists, loading, fetchLists };
+  const addList = async (name: string) => {
+    try {
+      const token = await getAccessTokenSilently();
+      const res = await contactService.addContactList(name, token);
+      setLists(prev => [...prev, { id: res.data.list_id, name: res.data.name, emails: [] }]);
+    } catch (err) { console.error(err); }
+  };
+
+  const deleteList = async (id: string) => {
+    try {
+      const token = await getAccessTokenSilently();
+      await contactService.deleteContactList(id, token);
+      setLists(prev => prev.filter(l => l.id !== id));
+    } catch (err) { console.error(err); }
+  };
+
+  return { lists, loading, fetchLists, addList, deleteList };
 };

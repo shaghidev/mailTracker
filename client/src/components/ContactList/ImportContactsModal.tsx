@@ -16,13 +16,15 @@ const ImportContactsModal: React.FC<Props> = ({ list, onClose, onImported }) => 
   const { getAccessTokenSilently } = useAuth0();
   const [contactsPreview, setContactsPreview] = useState<Contact[]>([]);
   const [filteredContacts, setFilteredContacts] = useState<Contact[]>([]);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null); // novi state za file
 
   // Odabir datoteke
-const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  if (!e.target.files?.[0]) return;
-  parseFile(e.target.files[0]); // direktno šaljemo file
-};
-
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setSelectedFile(file); // spremi file u state
+    parseFile(file);       // parsiraj za preview
+  };
 
   // Parsiranje CSV/Excel i filtriranje duplikata
   const parseFile = async (file: File) => {
@@ -47,12 +49,15 @@ const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFilteredContacts(unique);
   };
 
+  // Slanje kontakata na backend
   const handleImport = async () => {
-    if (filteredContacts.length === 0) return alert('No new contacts to import.');
+    if (!selectedFile || filteredContacts.length === 0) {
+      return alert('No new contacts to import.');
+    }
 
     try {
       const token = await getAccessTokenSilently();
-      await contactService.importContacts(list.id, filteredContacts, token);
+      await contactService.importContactsFile(list.id, selectedFile, token); // koristi selectedFile
       alert(`${filteredContacts.length} contacts imported successfully`);
       onImported();
       onClose();
@@ -78,7 +83,9 @@ const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 
         {contactsPreview.length > 0 && (
           <div className="mb-4 border border-gray-600 rounded p-2 max-h-60 overflow-auto">
-            <p className="text-gray-300 mb-2 font-semibold">Preview ({contactsPreview.length} contacts shown)</p>
+            <p className="text-gray-300 mb-2 font-semibold">
+              Preview ({contactsPreview.length} contacts shown)
+            </p>
             <table className="w-full text-sm text-left text-white">
               <thead>
                 <tr className="border-b border-gray-500">

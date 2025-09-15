@@ -14,11 +14,8 @@ export const useContactList = (listId: string) => {
       const token = await getAccessTokenSilently();
       const data = await contactService.fetchContacts(listId, token);
       setContacts(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
   }, [listId, getAccessTokenSilently]);
 
   const addContact = async (contact: Contact) => {
@@ -29,23 +26,19 @@ export const useContactList = (listId: string) => {
     } catch (err) { console.error(err); }
   };
 
-  const importContacts = async (newContacts: Contact[]) => {
+  const importContacts = async (file: File) => {
     try {
       const token = await getAccessTokenSilently();
-      const res = await contactService.importContacts(listId, newContacts, token);
-      setContacts(prev => {
-        const existingEmails = new Set(prev.map(c => c.email));
-        const unique = res.data.filter((c: Contact) => !existingEmails.has(c.email));
-        return [...prev, ...unique];
-      });
+      const res = await contactService.importContactsFile(listId, file, token);
+      setContacts(prev => [...prev, ...res.data.imported]);
     } catch (err) { console.error(err); }
   };
 
-  const deleteContact = async (id: string) => {
+  const deleteContact = async (email: string) => {
     try {
       const token = await getAccessTokenSilently();
-      await contactService.deleteContact(listId, id, token);
-      setContacts(prev => prev.filter(c => c.id !== id));
+      await contactService.deleteContact(listId, email, token);
+      setContacts(prev => prev.filter(c => c.email !== email));
     } catch (err) { console.error(err); }
   };
 
