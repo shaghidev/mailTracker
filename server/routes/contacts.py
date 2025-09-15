@@ -99,6 +99,52 @@ def delete_contact(list_id, email):
 def import_contacts(list_id):
     from openpyxl import load_workbook
     from io import BytesIO
+    from bson import ObjectId
+
+    try:
+        list_obj_id = str_to_objectid(list_id)
+        if not list_obj_id:
+            return jsonify({"status": "error", "message": "Invalid ID"}), 400
+
+        if "file" not in request.files:
+            return jsonify({"status": "error", "message": "No file uploaded"}), 400
+
+        file = request.files["file"]
+        if not (file.filename.endswith(".xlsx") or file.filename.endswith(".xls")):
+            return jsonify({"status": "error", "message": "Only Excel files are supported"}), 415
+
+        wb = load_workbook(filename=BytesIO(file.read()))
+        sheet = wb.active
+
+        headers = [str(cell.value).strip().lower() for cell in sheet[1]]
+        imported_contacts = []
+
+        for row in sheet.iter_rows(min_row=2, values_only=True):
+            row_dict = dict(zip(headers, row))
+            email = row_dict.get("email")
+            if email:
+                contact = {
+                    "email": str(email).strip(),
+                    "name": str(row_dict.get("name") or "").strip()
+                }
+                imported_contacts.append(contact)
+
+        if not imported_contacts:
+            return jsonify({"status": "error", "message": "No valid contacts found"}), 400
+
+        contact_lists_collection.update_one(
+            {"_id": list_obj_id},
+            {"$push": {"contacts": {"$each": imported_contacts}}}
+        )
+
+        return jsonify({"status": "ok", "imported": len(imported_contacts)})
+
+    except Exception as e:
+        print("Error importing Excel:", e)
+        return jsonify({"status": "error", "message": "Failed to import Excel"}), 500
+
+    from openpyxl import load_workbook
+    from io import BytesIO
 
     list_obj_id = str_to_objectid(list_id)
     if not list_obj_id:
