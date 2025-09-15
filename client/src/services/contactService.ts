@@ -44,14 +44,9 @@ export const deleteContact = async (listId: string, email: string, token: string
 };
 
 // --- Import Contacts from Excel/CSV ---
-export const importContacts = async (listId: string, file: File, token: string) => {
-  const formData = new FormData();
-  formData.append('file', file);
-
-  return axios.post(`${API_URL}/api/contact_lists/${listId}/contacts/import`, formData, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'multipart/form-data',
-    },
+export const importContacts = async (listId: string, contacts: Contact[], token: string) => {
+  return axios.post(`${API_URL}/api/contact_lists/${listId}/contacts/import`, { contacts }, {
+    headers: { Authorization: `Bearer ${token}` },
   });
 };
+

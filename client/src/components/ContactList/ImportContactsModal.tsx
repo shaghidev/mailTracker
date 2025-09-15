@@ -14,15 +14,18 @@ interface Props {
 
 const ImportContactsModal: React.FC<Props> = ({ list, onClose, onImported }) => {
   const { getAccessTokenSilently } = useAuth0();
-  const [file, setFile] = useState<File | null>(null);
+  const [contactsPreview, setContactsPreview] = useState<Contact[]>([]);
+  const [filteredContacts, setFilteredContacts] = useState<Contact[]>([]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) setFile(e.target.files[0]);
-  };
+  // Odabir datoteke
+const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  if (!e.target.files?.[0]) return;
+  parseFile(e.target.files[0]); // direktno šaljemo file
+};
 
-  const handleImport = async () => {
-    if (!file) return;
 
+  // Parsiranje CSV/Excel i filtriranje duplikata
+  const parseFile = async (file: File) => {
     let contacts: Contact[] = [];
 
     if (file.type.includes('csv')) {
@@ -36,15 +39,21 @@ const ImportContactsModal: React.FC<Props> = ({ list, onClose, onImported }) => 
       contacts = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]) as Contact[];
     }
 
-    const existingEmails = new Set(list.emails);
-    const filtered = contacts.filter(c => c.email && !existingEmails.has(c.email));
+    // filtriraj duplikate prema postojećim emailovima
+    const existingEmails = new Set(list.emails.map(e => e.toLowerCase()));
+    const unique = contacts.filter(c => c.email && !existingEmails.has(c.email.toLowerCase()));
 
-    if (filtered.length === 0) return alert('No new contacts to import.');
+    setContactsPreview(unique.slice(0, 20)); // preview prvih 20
+    setFilteredContacts(unique);
+  };
+
+  const handleImport = async () => {
+    if (filteredContacts.length === 0) return alert('No new contacts to import.');
 
     try {
       const token = await getAccessTokenSilently();
-      await contactService.importContacts(list.id, filtered, token);
-      alert(`${filtered.length} contacts imported successfully`);
+      await contactService.importContacts(list.id, filteredContacts, token);
+      alert(`${filteredContacts.length} contacts imported successfully`);
       onImported();
       onClose();
     } catch (err) {
@@ -55,12 +64,53 @@ const ImportContactsModal: React.FC<Props> = ({ list, onClose, onImported }) => 
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-      <div className="bg-[#1F2937] p-6 rounded-2xl w-[90%] max-w-lg">
-        <h2 className="text-2xl font-bold text-[#FFBD00] mb-4">Import Contacts to {list.name}</h2>
-        <input type="file" accept=".csv, .xlsx, .xls" onChange={handleFileChange} className="mb-4 w-full text-sm" />
-        <div className="flex justify-end gap-2">
-          <button onClick={onClose} className="bg-[#EF4444] py-2 px-4 rounded-lg hover:bg-[#DC2626] transition-colors">Cancel</button>
-          <button onClick={handleImport} className="bg-[#22C55E] py-2 px-4 rounded-lg hover:bg-[#16A34A] transition-colors">Import</button>
+      <div className="bg-[#1F2937] p-6 rounded-2xl w-[90%] max-w-lg max-h-[90vh] overflow-auto">
+        <h2 className="text-2xl font-bold text-[#FFBD00] mb-4">
+          Import Contacts to {list.name}
+        </h2>
+
+        <input
+          type="file"
+          accept=".csv, .xlsx, .xls"
+          onChange={handleFileChange}
+          className="mb-4 w-full text-sm"
+        />
+
+        {contactsPreview.length > 0 && (
+          <div className="mb-4 border border-gray-600 rounded p-2 max-h-60 overflow-auto">
+            <p className="text-gray-300 mb-2 font-semibold">Preview ({contactsPreview.length} contacts shown)</p>
+            <table className="w-full text-sm text-left text-white">
+              <thead>
+                <tr className="border-b border-gray-500">
+                  <th className="px-2 py-1">Name</th>
+                  <th className="px-2 py-1">Email</th>
+                </tr>
+              </thead>
+              <tbody>
+                {contactsPreview.map((c, idx) => (
+                  <tr key={idx} className="border-b border-gray-700">
+                    <td className="px-2 py-1">{c.name}</td>
+                    <td className="px-2 py-1">{c.email}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <div className="flex justify-end gap-2 mt-2">
+          <button
+            onClick={onClose}
+            className="bg-[#EF4444] py-2 px-4 rounded-lg hover:bg-[#DC2626] transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleImport}
+            className="bg-[#22C55E] py-2 px-4 rounded-lg hover:bg-[#16A34A] transition-colors"
+          >
+            Import
+          </button>
         </div>
       </div>
     </div>
