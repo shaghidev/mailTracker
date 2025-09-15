@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth0 } from '@auth0/auth0-react';
 import { Campaign } from '@/types/Campaign';
-import { useCampaigns } from '@/services/api';
+import { useCampaigns } from "@/hooks/useCampaigns";
 import CampaignCard from '@/components/CampaignCard/CampaignCard';
 
 const DashboardPage = () => {
