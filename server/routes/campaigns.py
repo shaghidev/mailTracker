@@ -214,7 +214,10 @@ def track_open():
             {"_id": mail["_id"]},
             {"$set": {"opened_at": datetime.utcnow()}}
         )
+        # Ispis u terminal
+        print(f"[OPEN] Email otvoren od strane: {email}, kampanja: {campaign_id}")
     return "", 200
+
 
 
 # track_click.py
