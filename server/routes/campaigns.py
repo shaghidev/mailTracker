@@ -3,6 +3,13 @@ from datetime import datetime
 from config import campaigns_collection
 from utils.helpers import str_to_objectid
 
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from routes.contacts import contact_lists_collection  # da može dohvatiti kontakte
+from config import mails_collection  # da može spremiti poslane mailove
+
+
 bp = Blueprint('campaigns', __name__)
 
 # Funkcija za slanje maila preko SMTP
@@ -56,8 +63,8 @@ def create_campaign():
     contacts = contact_list_obj["contacts"]
 
     # 3️⃣ Pošalji mailove i spremi u mails_collection
-    sender_email = "tvojemail@gmail.com"        # zamijeni sa stvarnim
-    sender_pass = "tvojEmailAppPassword"        # zamijeni sa stvarnim
+    sender_email = "laser@git.hr"        # zamijeni sa stvarnim
+    sender_pass = "0o7Swt8@"        # zamijeni sa stvarnim
 
     sent_count = 0
     for c in contacts:
