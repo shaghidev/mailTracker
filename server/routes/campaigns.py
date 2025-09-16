@@ -204,7 +204,7 @@ def get_all_campaigns():
     return jsonify(result)
 
 
-@app.route("/track_open")
+@bp.route("/track_open")
 def track_open():
     email = request.args.get("email")
     campaign_id = request.args.get("campaign_id")
@@ -214,11 +214,11 @@ def track_open():
             {"_id": mail["_id"]},
             {"$set": {"opened_at": datetime.utcnow()}}
         )
-    return "", 1, 200
+    return "", 200
 
 
 # track_click.py
-@app.route("/track_click")
+@bp.route("/track_click")
 def track_click():
     email = request.args.get("email")
     campaign_id = request.args.get("campaign_id")
@@ -229,4 +229,4 @@ def track_click():
             {"_id": mail["_id"]},
             {"$inc": {"click_count": 1}}
         )
-    return "", 1, 200
+    return "", 200
