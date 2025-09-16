@@ -229,7 +229,7 @@ def track_click():
     email = request.args.get("email")
     campaign_id = request.args.get("campaign_id")
     link = request.args.get("link")
-mail = mails_collection.find_one({"campaign_id": campaign_id, "recipient": email})
+    mail = mails_collection.find_one({"campaign_id": campaign_id, "recipient": email})
     if mail:
         mails_collection.update_one(
             {"_id": mail["_id"]},
