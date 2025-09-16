@@ -49,27 +49,30 @@ BATCH_DELAY = 2  # sec
 # --- Funkcija koja injektira tracking pixel i trackable linkove ---
 def inject_tracking(html_template: str, recipient_email: str, campaign_id: str) -> str:
     """
-    Zamijeni univerzalno:
-    1. Tracking pixel
-    2. Sve <a href="..."> linkove u emailu da idu preko track_click endpointa
+    1. Automatski dodaje tracking pixel na kraj <body> ako ga nema.
+    2. Zamjenjuje sve <a href="..."> linkove da idu preko track_click endpointa.
     """
     email_enc = quote_plus(recipient_email)
     campaign_enc = quote_plus(campaign_id)
 
-    # --- Tracking pixel ---
-    html_template = html_template.replace(
-        "{{tracking_pixel}}",
-        f"https://mailtracker-7jvy.onrender.com/track_open?email={email_enc}&campaign_id={campaign_enc}"
-    )
-
-    # --- Trackable links: traži sve <a href="..."> i zamijeni URL ---
+    # --- Trackable links ---
     def replace_link(match):
         url = match.group(1)
         return f'href="https://mailtracker-7jvy.onrender.com/track_click?email={email_enc}&campaign_id={campaign_enc}&link={quote_plus(url)}"'
-
+    
     html_template = re.sub(r'href="([^"]+)"', replace_link, html_template)
 
+    # --- Tracking pixel ---
+    tracking_pixel_tag = f'<img src="https://mailtracker-7jvy.onrender.com/track_open?email={email_enc}&campaign_id={campaign_enc}" width="1" height="1" style="display:none;">'
+    
+    # Dodaj na kraj <body> ili na kraj HTML-a
+    if "</body>" in html_template:
+        html_template = html_template.replace("</body>", tracking_pixel_tag + "</body>")
+    else:
+        html_template += tracking_pixel_tag
+
     return html_template
+
 
 # --- Funkcija koja šalje pojedinačne mailove ---
 def send_email_to_recipient(user_id: str, recipient: str, subject: str, html_content: str) -> bool:
@@ -167,6 +170,28 @@ def get_all_campaigns():
     campaigns = list(campaigns_collection.find())
     result = []
     for c in campaigns:
+        campaign_id = c["_id"]
+        sent_count = mails_collection.count_documents({"campaign_id": campaign_id})
+        opened_count = mails_collection.count_documents({"campaign_id": campaign_id, "opened_at": {"$exists": True}})
+        clicked_count = sum([m.get("click_count", 0) for m in mails_collection.find({"campaign_id": campaign_id})])
+
+        result.append({
+            "id": str(campaign_id),
+            "name": c["name"],
+            "subject": c.get("subject", ""),
+            "html_template": c.get("html_template", ""),
+            "user": c.get("user", "stream"),
+            "contact_list": c.get("contact_list", "newsletter"),
+            "createdAt": c.get("created_at").isoformat(),
+            "sent": sent_count,
+            "opened": opened_count,
+            "clicked": clicked_count
+        })
+    return jsonify(result)
+
+    campaigns = list(campaigns_collection.find())
+    result = []
+    for c in campaigns:
         result.append({
             "id": str(c["_id"]),
             "name": c["name"],
@@ -177,3 +202,31 @@ def get_all_campaigns():
             "createdAt": c.get("created_at").isoformat()
         })
     return jsonify(result)
+
+
+@app.route("/track_open")
+def track_open():
+    email = request.args.get("email")
+    campaign_id = request.args.get("campaign_id")
+    mail = mails_collection.find_one({"campaign_id": str_to_objectid(campaign_id), "recipient": email})
+    if mail:
+        mails_collection.update_one(
+            {"_id": mail["_id"]},
+            {"$set": {"opened_at": datetime.utcnow()}}
+        )
+    return "", 1, 200
+
+
+# track_click.py
+@app.route("/track_click")
+def track_click():
+    email = request.args.get("email")
+    campaign_id = request.args.get("campaign_id")
+    link = request.args.get("link")
+    mail = mails_collection.find_one({"campaign_id": str_to_objectid(campaign_id), "recipient": email})
+    if mail:
+        mails_collection.update_one(
+            {"_id": mail["_id"]},
+            {"$inc": {"click_count": 1}}
+        )
+    return "", 1, 200
