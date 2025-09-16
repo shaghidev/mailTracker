@@ -5,9 +5,80 @@ from utils.helpers import str_to_objectid
 
 bp = Blueprint('campaigns', __name__)
 
-# --- CREATE CAMPAIGN ---
+# Funkcija za slanje maila preko SMTP
+def send_email_smtp(recipient: str, subject: str, html_content: str, sender_email: str, sender_pass: str):
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = sender_email
+        msg['To'] = recipient
+        msg['Subject'] = subject
+        msg.attach(MIMEText(html_content, 'html'))
+
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(sender_email, sender_pass)
+            server.send_message(msg)
+        return True
+    except Exception as e:
+        print(f"Error sending to {recipient}: {e}")
+        return False
+
+# --- CREATE CAMPAIGN AND SEND MAILS ---
 @bp.route("/create_campaign", methods=["POST"])
 def create_campaign():
+    data = request.json
+    name = data.get("name")
+    subject = data.get("subject")
+    html_template = data.get("html_template")
+    user = data.get("user", "main")
+    contact_list_id = data.get("contact_list")
+
+    if not name or not subject or not html_template or not contact_list_id:
+        return jsonify({"status": "error", "message": "Missing fields"}), 400
+
+    campaign = {
+        "name": name,
+        "subject": subject,
+        "html_template": html_template,
+        "user": user,
+        "contact_list": contact_list_id,
+        "created_at": datetime.utcnow()
+    }
+
+    # 1️⃣ Spremi kampanju
+    result = campaigns_collection.insert_one(campaign)
+    campaign_id = str(result.inserted_id)
+
+    # 2️⃣ Dohvati kontakte iz liste
+    contact_list_obj = contact_lists_collection.find_one({"_id": str_to_objectid(contact_list_id)})
+    if not contact_list_obj or "contacts" not in contact_list_obj:
+        return jsonify({"status": "error", "message": "Contact list not found"}), 404
+
+    contacts = contact_list_obj["contacts"]
+
+    # 3️⃣ Pošalji mailove i spremi u mails_collection
+    sender_email = "tvojemail@gmail.com"        # zamijeni sa stvarnim
+    sender_pass = "tvojEmailAppPassword"        # zamijeni sa stvarnim
+
+    sent_count = 0
+    for c in contacts:
+        recipient = c.get("email")
+        if recipient:
+            sent = send_email_smtp(recipient, subject, html_template, sender_email, sender_pass)
+            if sent:
+                sent_count += 1
+                mails_collection.insert_one({
+                    "campaign_id": str_to_objectid(campaign_id),
+                    "recipient": recipient,
+                    "subject": subject,
+                    "html_content": html_template,
+                    "sent_at": datetime.utcnow()
+                })
+
+    return jsonify({
+        "status": "ok",
+        "campaign_id": campaign_id,
+        "emails_sent": sent_count
+    })
     data = request.json
     name = data.get("name")
     subject = data.get("subject")
