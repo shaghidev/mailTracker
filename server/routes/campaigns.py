@@ -1,7 +1,6 @@
-# routes/campaigns.py
 from flask import Blueprint, request, jsonify
 from datetime import datetime
-from config import campaigns_collection, mails_collection, events_collection
+from config import campaigns_collection
 from utils.helpers import str_to_objectid
 
 bp = Blueprint('campaigns', __name__)
@@ -13,6 +12,8 @@ def create_campaign():
     name = data.get("name")
     subject = data.get("subject")
     html_template = data.get("html_template")
+    user = data.get("user", "main")             # account od frontend-a
+    contact_list = data.get("contact_list", "newsletter") # lista od frontend-a
 
     if not name or not subject or not html_template:
         return jsonify({"status": "error", "message": "Missing fields"}), 400
@@ -21,6 +22,8 @@ def create_campaign():
         "name": name,
         "subject": subject,
         "html_template": html_template,
+        "user": user,
+        "contact_list": contact_list,
         "created_at": datetime.utcnow()
     }
 
@@ -38,26 +41,8 @@ def get_all_campaigns():
             "name": c["name"],
             "subject": c.get("subject", ""),
             "html_template": c.get("html_template", ""),
+            "user": c.get("user", "main"),
+            "contact_list": c.get("contact_list", "newsletter"),
             "createdAt": c.get("created_at").isoformat()
         })
     return jsonify(result)
-
-# --- GET CAMPAIGN STATS ---
-@bp.route("/campaign_stats/<campaign_id>", methods=["GET"])
-def campaign_stats(campaign_id):
-    campaign_obj_id = str_to_objectid(campaign_id)
-    if not campaign_obj_id:
-        return jsonify({"status": "error", "message": "Invalid campaign_id"}), 400
-
-    mails = list(mails_collection.find({"campaign_id": campaign_obj_id}))
-    mail_ids = [m["_id"] for m in mails]
-
-    opens = events_collection.count_documents({"mail_id": {"$in": mail_ids}, "type": "open"})
-    clicks = events_collection.count_documents({"mail_id": {"$in": mail_ids}, "type": "click"})
-    total_mails = len(mails)
-
-    return jsonify({
-        "total_mails": total_mails,
-        "opens": opens,
-        "clicks": clicks
-    })

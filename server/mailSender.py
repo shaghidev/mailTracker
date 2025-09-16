@@ -64,9 +64,11 @@ if os.path.exists(log_file):
 # --- Funkcija za kreiranje maila u backendu ---
 def create_mail_in_backend(email):
     try:
-        resp = requests.post(f"{tracking_server_url}/add_mail", json={
+        resp = requests.post(f"{tracking_server_url}/create_mail", json={
             "campaign_id": campaign_id,
-            "email": email
+            "recipient": email,
+            "subject": subject,
+            "html_content": html_template_content
         })
         resp.raise_for_status()
         mail_id = resp.json().get("mail_id")
@@ -74,6 +76,7 @@ def create_mail_in_backend(email):
     except Exception as e:
         print(f"[ERROR] Ne mogu kreirati mail u backendu: {e}")
         return None
+
 
 # --- Funkcija za pripremu HTML-a ---
 def prepare_html(email, mail_id):

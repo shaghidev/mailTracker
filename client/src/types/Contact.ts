@@ -16,5 +16,6 @@ export interface Contact {
 export interface ContactList {
   id: string;
   name: string;
-  emails: string[];
+  emails?: string[]; // stavi opcionalno
+
 }

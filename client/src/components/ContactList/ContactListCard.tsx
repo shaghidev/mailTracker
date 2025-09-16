@@ -12,7 +12,7 @@ const ContactListCard: React.FC<Props> = ({ list, onView, onDelete }) => (
     <h2 className="font-bold text-xl mb-2 text-[#FFBD00]">{list.name}</h2>
     
     {/* Ukupan broj kontakata */}
-    <p className="text-[#A0AEC0]">{list.emails.length} contacts</p>
+<p className="text-[#A0AEC0]">{list.emails?.length ?? 0} contacts</p>
 
 
     <p className="text-[#A0AEC0]">Click to view contacts</p>
