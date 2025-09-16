@@ -12,11 +12,11 @@ const ContactTable: React.FC<Props> = ({ contacts, onDelete }) => {
       <table className="w-full text-left border-collapse min-w-[600px] sm:min-w-full">
         <thead>
           <tr className="bg-[#1F2937] text-[#FFBD00] text-sm sm:text-base">
-            <th className="p-2">Name</th>
+            <th className="p-2">Ime</th>
             <th className="p-2">Email</th>
-            <th className="p-2">Company</th>
-            <th className="p-2">Product</th>
-            <th className="p-2">Actions</th>
+            <th className="p-2">Tvrtka</th>
+            <th className="p-2">Proizvod</th>
+            <th className="p-2">Akcije</th>
           </tr>
         </thead>
         <tbody>
@@ -34,7 +34,7 @@ const ContactTable: React.FC<Props> = ({ contacts, onDelete }) => {
                   onClick={() => onDelete(c.email)}
                   className="bg-[#EF4444] py-1 px-3 rounded hover:bg-[#DC2626] text-xs sm:text-sm"
                 >
-                  Delete
+                  Obriši
                 </button>
               </td>
             </tr>

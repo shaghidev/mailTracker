@@ -10,7 +10,7 @@ const ContactCards: React.FC<Props> = ({ contacts }) => {
   if (!contacts.length)
     return (
       <p className="text-gray-400 text-center py-6">
-        No contacts to display.
+        Nema kontakata za prikaz.
       </p>
     );
 
@@ -27,10 +27,10 @@ const ContactCards: React.FC<Props> = ({ contacts }) => {
           </h3>
           <p className="text-gray-300 break-all">{c.email}</p>
           {c.company && (
-            <p className="text-gray-400 text-sm">Company: {c.company}</p>
+            <p className="text-gray-400 text-sm">Tvrtka: {c.company}</p>
           )}
           {c.product && (
-            <p className="text-gray-400 text-sm">Product: {c.product}</p>
+            <p className="text-gray-400 text-sm">Proizvod: {c.product}</p>
           )}
         </div>
       ))}

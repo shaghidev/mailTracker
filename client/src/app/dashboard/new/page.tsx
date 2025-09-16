@@ -50,10 +50,10 @@ const NewCampaignPage = () => {
       });
       const data = await res.json();
       if (data.status === 'ok') {
-        alert(`Kampanja kreirana! Poslano ${data.emails_sent} mailova.`);
+        alert(`Kampanja je kreirana! Poslano ${data.emails_sent} e-mailova.`);
         router.push('/dashboard');
       } else {
-        console.error('Error:', data.message);
+        console.error('Greška:', data.message);
         alert(`Greška: ${data.message}`);
       }
     } catch (err) {
@@ -95,7 +95,7 @@ const NewCampaignPage = () => {
           />
           <input
             type="text"
-            placeholder="Subject"
+            placeholder="Predmet"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
             className="flex-1 border border-[#2D3748] p-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#25B9C4] text-white placeholder-[#A0AEC0]"
@@ -105,7 +105,7 @@ const NewCampaignPage = () => {
 
         {/* HTML Template */}
         <textarea
-          placeholder="HTML Template"
+          placeholder="HTML predložak"
           value={htmlTemplate}
           onChange={(e) => setHtmlTemplate(e.target.value)}
           className="border border-[#2D3748] p-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#25B9C4] text-white placeholder-[#A0AEC0] h-48 resize-none"
@@ -114,10 +114,10 @@ const NewCampaignPage = () => {
 
         {/* Live Preview */}
         <div className="bg-[#111827] p-4 rounded-lg max-h-64 overflow-auto">
-          <h2 className="text-lg font-semibold text-[#FFBD00] mb-2">Live Preview</h2>
+          <h2 className="text-lg font-semibold text-[#FFBD00] mb-2">Pregled uživo</h2>
           <iframe
             srcDoc={htmlTemplate}
-            title="Newsletter Preview"
+            title="Pregled newslettera"
             className="w-full h-64 rounded"
             style={{ background: "#fff" }}
           />
@@ -143,7 +143,7 @@ const NewCampaignPage = () => {
           <div className="flex flex-col gap-1">
             <label className="text-sm text-[#A0AEC0]">Odaberi listu kontakata</label>
             {listsLoading ? (
-              <p className="text-[#A0AEC0]">Loading lists...</p>
+              <p className="text-[#A0AEC0]">Učitavanje lista...</p>
             ) : (
               <select
                 value={selectedList}

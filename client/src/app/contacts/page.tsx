@@ -21,7 +21,7 @@ const ContactsPage = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#080D10] text-white px-4">
         <p className="text-base sm:text-lg text-[#A0AEC0] text-center">
-          Login to see contact lists
+          Prijavite se za prikaz lista kontakata
         </p>
       </div>
     );
@@ -55,14 +55,14 @@ const ContactsPage = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <h1 className="text-2xl sm:text-3xl lg:text-5xl font-extrabold text-[#FFBD00]">
-            Contact Lists
+            Liste kontakata
           </h1>
 
           {/* Input + Button */}
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <input
               type="text"
-              placeholder="New list name"
+              placeholder="Naziv nove liste"
               value={newListName}
               onChange={(e) => setNewListName(e.target.value)}
               className="px-3 py-2 rounded-lg text-white bg-[#1F2937] placeholder-[#A0AEC0] w-full sm:w-64"
@@ -71,14 +71,14 @@ const ContactsPage = () => {
               onClick={handleAddList}
               className="bg-[#22C55E] py-2 px-4 rounded-lg hover:bg-[#16A34A] transition-colors w-full sm:w-auto"
             >
-              Add
+              Dodaj
             </button>
           </div>
         </div>
 
         {/* Lists */}
         {loading ? (
-          <p className="text-[#A0AEC0]">Loading lists...</p>
+          <p className="text-[#A0AEC0]">Učitavanje lista...</p>
         ) : (
           <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {lists.map((list: ContactList) => (

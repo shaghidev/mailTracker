@@ -26,13 +26,13 @@ const ContactListPage = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#080D10] text-[#FFFFFF] px-4">
         <p className="text-base sm:text-lg text-[#A0AEC0] text-center">
-          Login to see contacts
+          Prijavite se za prikaz kontakata
         </p>
       </div>
     );
   }
 
-  if (!id) return <p>Invalid list ID</p>;
+  if (!id) return <p>Neispravan ID liste</p>;
 
   return (
     <div className="min-h-screen bg-[#080D10] text-white px-4 sm:px-6 md:px-8 py-6">
@@ -44,7 +44,7 @@ const ContactListPage = () => {
                      w-full sm:w-max text-sm sm:text-base font-medium"
           whileHover={{ scale: 1.05 }}
         >
-          Back to Lists
+          Povratak na liste
         </motion.button>
 
         {/* Header */}
@@ -53,7 +53,7 @@ const ContactListPage = () => {
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          Contact List
+          Lista kontakata
         </motion.h1>
 
         {/* Add Contact Form */}
@@ -67,14 +67,14 @@ const ContactListPage = () => {
           className="bg-[#FFBD00] text-black px-4 py-2 rounded hover:bg-[#E6AC00] 
                      w-full sm:w-max text-sm sm:text-base font-medium"
         >
-          Import CSV/Excel
+          Uvezi CSV/Excel
         </button>
 
         {/* Contacts Table */}
         <div className="overflow-x-auto w-full rounded-lg border border-[#1E293B]">
           {loading ? (
             <p className="text-[#A0AEC0] text-center py-4">
-              Loading contacts...
+              Učitavanje kontakata...
             </p>
           ) : (
             <ContactTable contacts={contacts} onDelete={deleteContact} />
@@ -86,7 +86,7 @@ const ContactListPage = () => {
           <ImportContactsModal
             list={{
               id: listId,
-              name: 'Your list name',
+              name: 'Naziv liste',
               emails: contacts.map((c) => c.email),
             }}
             onClose={() => setShowImport(false)}

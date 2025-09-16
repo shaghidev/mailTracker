@@ -26,26 +26,23 @@ const AddContactForm: React.FC<Props> = ({ onAdd }) => {
     >
       <input
         type="text"
-        placeholder="Name"
+        placeholder="Ime"
         value={name}
         onChange={e => setName(e.target.value)}
-        className="px-3 py-2 rounded bg-[#1F2937] text-white 
-                   placeholder-[#A0AEC0] w-full sm:w-auto flex-1"
+        className="px-3 py-2 rounded bg-[#1F2937] text-white placeholder-[#A0AEC0] w-full sm:w-auto flex-1"
       />
       <input
         type="email"
         placeholder="Email"
         value={email}
         onChange={e => setEmail(e.target.value)}
-        className="px-3 py-2 rounded bg-[#1F2937] text-white 
-                   placeholder-[#A0AEC0] w-full sm:w-auto flex-1"
+        className="px-3 py-2 rounded bg-[#1F2937] text-white placeholder-[#A0AEC0] w-full sm:w-auto flex-1"
       />
       <button
         type="submit"
-        className="bg-[#22C55E] px-4 py-2 rounded hover:bg-[#16A34A] 
-                   transition-colors font-medium w-full sm:w-auto"
+        className="bg-[#22C55E] px-4 py-2 rounded hover:bg-[#16A34A] transition-colors font-medium w-full sm:w-auto"
       >
-        Add
+        Dodaj
       </button>
     </form>
   );

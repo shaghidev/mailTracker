@@ -17,10 +17,9 @@ const ContactListCard: React.FC<Props> = ({ list, onView, onDelete }) => (
     </h2>
 
     <p className="text-[#A0AEC0] text-sm sm:text-base">
-      {list.emails?.length ?? 0} contacts
+      {list.emails?.length ?? 0} kontakata
     </p>
-
-    <p className="text-[#A0AEC0] text-sm">Click to view contacts</p>
+    <p className="text-[#A0AEC0] text-sm">Kliknite za prikaz kontakata</p>
 
     <div className="mt-4 flex flex-col sm:flex-row gap-2">
       <button
@@ -28,14 +27,14 @@ const ContactListCard: React.FC<Props> = ({ list, onView, onDelete }) => (
                    transition-colors text-sm sm:text-base"
         onClick={onView}
       >
-        View
+        Prikaži
       </button>
       <button
         className="flex-1 bg-[#EF4444] py-2 rounded-lg hover:bg-[#DC2626] 
                    transition-colors text-sm sm:text-base"
         onClick={() => onDelete(list.id)}
       >
-        Delete
+        Obriši
       </button>
     </div>
   </li>
