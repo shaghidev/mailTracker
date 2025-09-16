@@ -48,22 +48,18 @@ BATCH_DELAY = 2  # sec
 
 # --- Funkcija koja injektira tracking pixel i trackable linkove ---
 def inject_tracking(html_template: str, recipient_email: str, campaign_id: str) -> str:
-    """
-    1. Automatski dodaje tracking pixel na kraj <body> ako ga nema.
-    2. Zamjenjuje sve <a href="..."> linkove da idu preko track_click endpointa.
-    """
     email_enc = quote_plus(recipient_email)
     campaign_enc = quote_plus(campaign_id)
 
     # --- Trackable links ---
     def replace_link(match):
         url = match.group(1)
-        return f'href="https://mailtracker-7jvy.onrender.com/track_click?email={email_enc}&campaign_id={campaign_enc}&link={quote_plus(url)}"'
+        return f'href="https://mailtracker-7jvy.onrender.com/api/campaigns/track_click?email={email_enc}&campaign_id={campaign_enc}&link={quote_plus(url)}"'
     
     html_template = re.sub(r'href="([^"]+)"', replace_link, html_template)
 
     # --- Tracking pixel ---
-    tracking_pixel_tag = f'<img src="https://mailtracker-7jvy.onrender.com/track_open?email={email_enc}&campaign_id={campaign_enc}" width="1" height="1" style="display:none;">'
+    tracking_pixel_tag = f'<img src="https://mailtracker-7jvy.onrender.com/api/campaigns/track_open?email={email_enc}&campaign_id={campaign_enc}" width="1" height="1" style="display:none;">'
     
     # Dodaj na kraj <body> ili na kraj HTML-a
     if "</body>" in html_template:
