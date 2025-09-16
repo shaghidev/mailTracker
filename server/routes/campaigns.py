@@ -1,32 +1,42 @@
+# campaigns.py
 from flask import Blueprint, request, jsonify
 from datetime import datetime
-from config import campaigns_collection
-from utils.helpers import str_to_objectid
-
+from dotenv import load_dotenv
+import os
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from routes.contacts import contact_lists_collection  # da može dohvatiti kontakte
-from config import mails_collection  # da može spremiti poslane mailove
 
+from config import campaigns_collection, mails_collection
+from routes.contacts import contact_lists_collection  # za dohvat kontakata
+from utils.helpers import str_to_objectid
+
+# --- Load .env ---
+load_dotenv()
+
+# --- SMTP podaci ---
+SMTP_HOST = os.getenv("SMTP_HOST")
+SMTP_PORT = int(os.getenv("SMTP_PORT"))
+SMTP_USER = os.getenv("SMTP_USER")
+SMTP_PASS = os.getenv("SMTP_PASS")
 
 bp = Blueprint('campaigns', __name__)
 
-# Funkcija za slanje maila preko SMTP
-def send_email_smtp(recipient: str, subject: str, html_content: str, sender_email: str, sender_pass: str):
+# --- Funkcija za slanje maila ---
+def send_email_smtp(recipient: str, subject: str, html_content: str):
     try:
         msg = MIMEMultipart()
-        msg['From'] = sender_email
+        msg['From'] = SMTP_USER
         msg['To'] = recipient
         msg['Subject'] = subject
         msg.attach(MIMEText(html_content, 'html'))
 
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
-            server.login(sender_email, sender_pass)
+        with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT) as server:
+            server.login(SMTP_USER, SMTP_PASS)
             server.send_message(msg)
         return True
     except Exception as e:
-        print(f"Error sending to {recipient}: {e}")
+        print(f"[ERROR] Slanje na {recipient} nije uspjelo: {e}")
         return False
 
 # --- CREATE CAMPAIGN AND SEND MAILS ---
@@ -42,6 +52,7 @@ def create_campaign():
     if not name or not subject or not html_template or not contact_list_id:
         return jsonify({"status": "error", "message": "Missing fields"}), 400
 
+    # --- Spremi kampanju ---
     campaign = {
         "name": name,
         "subject": subject,
@@ -50,27 +61,22 @@ def create_campaign():
         "contact_list": contact_list_id,
         "created_at": datetime.utcnow()
     }
-
-    # 1️⃣ Spremi kampanju
     result = campaigns_collection.insert_one(campaign)
     campaign_id = str(result.inserted_id)
 
-    # 2️⃣ Dohvati kontakte iz liste
+    # --- Dohvati kontakte ---
     contact_list_obj = contact_lists_collection.find_one({"_id": str_to_objectid(contact_list_id)})
     if not contact_list_obj or "contacts" not in contact_list_obj:
         return jsonify({"status": "error", "message": "Contact list not found"}), 404
 
     contacts = contact_list_obj["contacts"]
 
-    # 3️⃣ Pošalji mailove i spremi u mails_collection
-    sender_email = "laser@git.hr"        # zamijeni sa stvarnim
-    sender_pass = "0o7Swt8@"        # zamijeni sa stvarnim
-
+    # --- Pošalji mailove i spremi u mails_collection ---
     sent_count = 0
     for c in contacts:
         recipient = c.get("email")
         if recipient:
-            sent = send_email_smtp(recipient, subject, html_template, sender_email, sender_pass)
+            sent = send_email_smtp(recipient, subject, html_template)
             if sent:
                 sent_count += 1
                 mails_collection.insert_one({
@@ -86,27 +92,7 @@ def create_campaign():
         "campaign_id": campaign_id,
         "emails_sent": sent_count
     })
-    data = request.json
-    name = data.get("name")
-    subject = data.get("subject")
-    html_template = data.get("html_template")
-    user = data.get("user", "main")             # account od frontend-a
-    contact_list = data.get("contact_list", "newsletter") # lista od frontend-a
 
-    if not name or not subject or not html_template:
-        return jsonify({"status": "error", "message": "Missing fields"}), 400
-
-    campaign = {
-        "name": name,
-        "subject": subject,
-        "html_template": html_template,
-        "user": user,
-        "contact_list": contact_list,
-        "created_at": datetime.utcnow()
-    }
-
-    result = campaigns_collection.insert_one(campaign)
-    return jsonify({"status": "ok", "campaign_id": str(result.inserted_id)})
 
 # --- GET ALL CAMPAIGNS ---
 @bp.route("/", methods=["GET"])

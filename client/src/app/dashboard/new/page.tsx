@@ -42,7 +42,7 @@ const handleSubmit = async (e: React.FormEvent) => {
   setLoading(true);
 
   try {
-    const res = await fetch(`${API_URL}/campaigns/create_campaign`, {
+    const res = await fetch(`${API_URL}/create_campaign`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
