@@ -106,11 +106,12 @@ def send_emails_in_batches(user_id: str, contacts: List[dict], subject: str, htm
             if send_email_to_recipient(user_id, recipient, subject, tracked_html):
                 sent_count += 1
                 mails_collection.insert_one({
-                    "campaign_id": campaign_obj_id,  # spremi kao ObjectId!
+                    "campaign_id": campaign_obj_id,
                     "recipient": recipient,
                     "subject": subject,
                     "html_content": tracked_html,
-                    "sent_at": datetime.utcnow()
+                    "sent_at": datetime.utcnow(),
+                    "click_count": 0  # Dodaj ovo!
                 })
         if i + BATCH_SIZE < len(contacts):
             time.sleep(BATCH_DELAY)
