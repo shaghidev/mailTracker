@@ -190,20 +190,6 @@ def get_all_campaigns():
         })
     return jsonify(result)
 
-    campaigns = list(campaigns_collection.find())
-    result = []
-    for c in campaigns:
-        result.append({
-            "id": str(c["_id"]),
-            "name": c["name"],
-            "subject": c.get("subject", ""),
-            "html_template": c.get("html_template", ""),
-            "user": c.get("user", "stream"),
-            "contact_list": c.get("contact_list", "newsletter"),
-            "createdAt": c.get("created_at").isoformat()
-        })
-    return jsonify(result)
-
 @bp.route("/track_open")
 def track_open():
     email = request.args.get("email")

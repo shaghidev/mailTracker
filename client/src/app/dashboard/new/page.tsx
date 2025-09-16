@@ -115,10 +115,11 @@ const NewCampaignPage = () => {
         {/* Live Preview */}
         <div className="bg-[#111827] p-4 rounded-lg max-h-64 overflow-auto">
           <h2 className="text-lg font-semibold text-[#FFBD00] mb-2">Live Preview</h2>
-          <div
-            dangerouslySetInnerHTML={{ __html: htmlTemplate }}
-            className="prose prose-invert max-h-64 overflow-auto"
-            style={{ wordBreak: 'break-word' }}
+          <iframe
+            srcDoc={htmlTemplate}
+            title="Newsletter Preview"
+            className="w-full h-64 rounded"
+            style={{ background: "#fff" }}
           />
         </div>
 
