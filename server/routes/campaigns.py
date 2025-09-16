@@ -113,7 +113,8 @@ def send_emails_in_batches(user_id: str, contacts: List[dict], subject: str, htm
 
                 # --- Pohrana maila u DB s trackiranim HTML-om ---
                 mails_collection.insert_one({
-                    "campaign_id": str_to_objectid(campaign_id),
+                    "campaign_id": campaign_id,  # spremi kao string, ne ObjectId
+
                     "recipient": recipient,
                     "subject": subject,
                     "html_content": tracked_html,
@@ -203,12 +204,11 @@ def get_all_campaigns():
         })
     return jsonify(result)
 
-
 @bp.route("/track_open")
 def track_open():
     email = request.args.get("email")
     campaign_id = request.args.get("campaign_id")
-    mail = mails_collection.find_one({"campaign_id": str_to_objectid(campaign_id), "recipient": email})
+    mail = mails_collection.find_one({"campaign_id": campaign_id, "recipient": email})
     if mail:
         mails_collection.update_one(
             {"_id": mail["_id"]},
@@ -216,7 +216,10 @@ def track_open():
         )
         # Ispis u terminal
         print(f"[OPEN] Email otvoren od strane: {email}, kampanja: {campaign_id}")
+    else:
+        print(f"[OPEN] Mail nije pronađen za {email} i kampanju {campaign_id}")
     return "", 200
+
 
 
 
@@ -226,7 +229,7 @@ def track_click():
     email = request.args.get("email")
     campaign_id = request.args.get("campaign_id")
     link = request.args.get("link")
-    mail = mails_collection.find_one({"campaign_id": str_to_objectid(campaign_id), "recipient": email})
+mail = mails_collection.find_one({"campaign_id": campaign_id, "recipient": email})
     if mail:
         mails_collection.update_one(
             {"_id": mail["_id"]},
