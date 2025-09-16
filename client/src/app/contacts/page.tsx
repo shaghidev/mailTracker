@@ -19,20 +19,24 @@ const ContactsPage = () => {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#080D10] text-[#FFFFFF]">
-        <p className="text-lg text-[#A0AEC0]">Login to see contact lists</p>
+      <div className="min-h-screen flex items-center justify-center bg-[#080D10] text-white px-4">
+        <p className="text-base sm:text-lg text-[#A0AEC0] text-center">
+          Login to see contact lists
+        </p>
       </div>
     );
   }
 
-  const handleAddList = async () => { 
+  const handleAddList = async () => {
     if (!newListName.trim()) return;
     try {
       const token = await getAccessTokenSilently();
       await addContactList(newListName, token);
       setNewListName('');
       fetchLists();
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleDeleteList = async (id: string) => {
@@ -40,45 +44,54 @@ const ContactsPage = () => {
       const token = await getAccessTokenSilently();
       await deleteContactList(id, token);
       fetchLists();
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
-    <div className="min-h-screen p-8 bg-[#080D10] text-[#FFFFFF]">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-4xl font-extrabold text-[#FFBD00]">Contact Lists</h1>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder="New list name"
-            value={newListName}
-            onChange={(e) => setNewListName(e.target.value)}
-            className="px-3 py-2 rounded-lg text-[#FFFFFF] bg-[#1F2937] placeholder-[#A0AEC0]"
-          />
-          <button
-            onClick={handleAddList}
-            className="bg-[#22C55E] py-2 px-4 rounded-lg hover:bg-[#16A34A] transition-colors"
-          >
-            Add
-          </button>
+    <div className="min-h-screen bg-[#080D10] text-white px-4 sm:px-6 md:px-8 py-6">
+      <div className="container mx-auto flex flex-col gap-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <h1 className="text-2xl sm:text-3xl lg:text-5xl font-extrabold text-[#FFBD00]">
+            Contact Lists
+          </h1>
+
+          {/* Input + Button */}
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <input
+              type="text"
+              placeholder="New list name"
+              value={newListName}
+              onChange={(e) => setNewListName(e.target.value)}
+              className="px-3 py-2 rounded-lg text-white bg-[#1F2937] placeholder-[#A0AEC0] w-full sm:w-64"
+            />
+            <button
+              onClick={handleAddList}
+              className="bg-[#22C55E] py-2 px-4 rounded-lg hover:bg-[#16A34A] transition-colors w-full sm:w-auto"
+            >
+              Add
+            </button>
+          </div>
         </div>
+
+        {/* Lists */}
+        {loading ? (
+          <p className="text-[#A0AEC0]">Loading lists...</p>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {lists.map((list: ContactList) => (
+              <ContactListCard
+                key={list.id}
+                list={list}
+                onView={() => router.push(`/contacts/${list.id}`)}
+                onDelete={handleDeleteList}
+              />
+            ))}
+          </div>
+        )}
       </div>
-
-      {loading ? (
-        <p className="text-[#A0AEC0]">Loading lists...</p>
-      ) : (
-        <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-          {lists.map((list: ContactList) => (
-           <ContactListCard
-  key={list.id}
-  list={list}
-  onView={() => router.push(`/contacts/${list.id}`)} // OVDJE
-  onDelete={handleDeleteList}
-/>
-
-          ))}
-        </div>
-      )}
     </div>
   );
 };

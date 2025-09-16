@@ -1,6 +1,7 @@
 // src/app/layout.tsx
 'use client';
 import Navbar from '@/components/Navbar/Navbar';
+import Footer from '@/components/Footer/Footer'; // <-- ispravno
 import ClientAuth0Provider from '@/components/Auth0/ClientAuth0Provider';
 import '@/styles/globals.css';
 
@@ -22,9 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </main>
 
           {/* Footer */}
-          <footer className="bg-[#0B1E1E] text-[#BCCCDC] text-center text-sm py-6 mt-12">
-            &copy; {new Date().getFullYear()} Gules – Profesionalni email marketing za ozbiljne biznise.
-          </footer>
+          <Footer />
 
         </ClientAuth0Provider>
       </body>

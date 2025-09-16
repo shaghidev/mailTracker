@@ -124,53 +124,54 @@ const ImportContactsModal: React.FC<Props> = ({ list, onClose, onImported }) => 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-      <div className="bg-[#1F2937] p-6 rounded-2xl w-[90%] max-w-3xl max-h-[90vh] overflow-auto">
-        <h2 className="text-2xl font-bold text-[#FFBD00] mb-4">
-          Import Contacts to {list.name}
-        </h2>
+<div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+  <div className="bg-[#1F2937] p-6 rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-auto">
+    <h2 className="text-2xl font-bold text-[#FFBD00] mb-4">
+      Import Contacts to {list.name}
+    </h2>
 
-        <input
-          type="file"
-          accept=".xlsx,.xls"
-          onChange={handleFileChange}
-          className="mb-4 w-full text-sm"
-        />
+    <input
+      type="file"
+      accept=".xlsx,.xls"
+      onChange={handleFileChange}
+      className="mb-4 w-full text-sm"
+    />
 
-        {contactsPreview.length > 0 && (
-          <div className="mb-4">
-            <p className="text-gray-300 mb-2 font-semibold">
-              Preview ({contactsPreview.length} contacts)
-            </p>
-            <ContactCards contacts={contactsPreview} />
-            <div className="mt-4">
-              <ContactTable
-                contacts={contactsPreview}
-                onDelete={(email) => {
-                  setContactsPreview(prev => prev.filter(c => c.email !== email));
-                  setFilteredContacts(prev => prev.filter(c => c.email !== email));
-                }}
-              />
-            </div>
-          </div>
-        )}
-
-        <div className="flex justify-end gap-2 mt-4">
-          <button
-            onClick={onClose}
-            className="bg-[#EF4444] py-2 px-4 rounded-lg hover:bg-[#DC2626] transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleImport}
-            className="bg-[#22C55E] py-2 px-4 rounded-lg hover:bg-[#16A34A] transition-colors"
-          >
-            Import
-          </button>
+    {contactsPreview.length > 0 && (
+      <div className="mb-4 flex flex-col gap-4">
+        <p className="text-gray-300 font-semibold">
+          Preview ({contactsPreview.length} contacts)
+        </p>
+        <ContactCards contacts={contactsPreview} />
+        <div className="overflow-x-auto">
+          <ContactTable
+            contacts={contactsPreview}
+            onDelete={(email) => {
+              setContactsPreview(prev => prev.filter(c => c.email !== email));
+              setFilteredContacts(prev => prev.filter(c => c.email !== email));
+            }}
+          />
         </div>
       </div>
+    )}
+
+    <div className="flex flex-col sm:flex-row justify-end gap-2 mt-4">
+      <button
+        onClick={onClose}
+        className="bg-[#EF4444] py-2 px-4 rounded-lg hover:bg-[#DC2626] transition-colors w-full sm:w-auto"
+      >
+        Cancel
+      </button>
+      <button
+        onClick={handleImport}
+        className="bg-[#22C55E] py-2 px-4 rounded-lg hover:bg-[#16A34A] transition-colors w-full sm:w-auto"
+      >
+        Import
+      </button>
     </div>
+  </div>
+</div>
+
   );
 };
 

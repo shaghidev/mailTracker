@@ -14,15 +14,20 @@ const ContactListPage = () => {
   const router = useRouter();
   const { isAuthenticated } = useAuth0();
 
-  const { contacts, loading, fetchContacts, addContact, deleteContact } = useContactList(listId);
+  const { contacts, loading, fetchContacts, addContact, deleteContact } =
+    useContactList(listId);
   const [showImport, setShowImport] = useState(false);
 
-  useEffect(() => { fetchContacts(); }, [fetchContacts]);
+  useEffect(() => {
+    fetchContacts();
+  }, [fetchContacts]);
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#080D10] text-[#FFFFFF]">
-        <p className="text-lg text-[#A0AEC0]">Login to see contacts</p>
+      <div className="min-h-screen flex items-center justify-center bg-[#080D10] text-[#FFFFFF] px-4">
+        <p className="text-base sm:text-lg text-[#A0AEC0] text-center">
+          Login to see contacts
+        </p>
       </div>
     );
   }
@@ -30,49 +35,65 @@ const ContactListPage = () => {
   if (!id) return <p>Invalid list ID</p>;
 
   return (
-    <div className="min-h-screen p-8 bg-[#080D10] text-white flex flex-col gap-6">
-      {/* Back Button */}
-      <motion.button
-        onClick={() => router.push('/contacts')}
-        className="bg-[#2979FF] px-4 py-2 rounded hover:bg-[#1E63D8] w-max"
-        whileHover={{ scale: 1.05 }}
-      >
-        Back to Lists
-      </motion.button>
+    <div className="min-h-screen bg-[#080D10] text-white px-4 sm:px-6 md:px-8 py-6">
+      <div className="container mx-auto flex flex-col gap-6">
+        {/* Back Button */}
+        <motion.button
+          onClick={() => router.push('/contacts')}
+          className="bg-[#2979FF] px-4 py-2 rounded hover:bg-[#1E63D8] 
+                     w-full sm:w-max text-sm sm:text-base font-medium"
+          whileHover={{ scale: 1.05 }}
+        >
+          Back to Lists
+        </motion.button>
 
-      {/* Header */}
-      <motion.h1
-        className="text-3xl font-bold text-[#FFBD00] mb-4"
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        Contact List
-      </motion.h1>
+        {/* Header */}
+        <motion.h1
+          className="text-2xl sm:text-3xl lg:text-5xl font-bold text-[#FFBD00] mb-2"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          Contact List
+        </motion.h1>
 
-      {/* Add Contact Form */}
-      <AddContactForm onAdd={addContact} />
+        {/* Add Contact Form */}
+        <div className="w-full">
+          <AddContactForm onAdd={addContact} />
+        </div>
 
-      {/* Import Button */}
-      <button
-        onClick={() => setShowImport(true)}
-        className="bg-[#FFBD00] text-black px-4 py-2 rounded hover:bg-[#E6AC00] w-max"
-      >
-        Import CSV/Excel
-      </button>
+        {/* Import Button */}
+        <button
+          onClick={() => setShowImport(true)}
+          className="bg-[#FFBD00] text-black px-4 py-2 rounded hover:bg-[#E6AC00] 
+                     w-full sm:w-max text-sm sm:text-base font-medium"
+        >
+          Import CSV/Excel
+        </button>
 
-      {/* Contacts Table */}
-      {loading ? <p className="text-[#A0AEC0]">Loading contacts...</p> : (
-        <ContactTable contacts={contacts} onDelete={deleteContact} />
-      )}
+        {/* Contacts Table */}
+        <div className="overflow-x-auto w-full rounded-lg border border-[#1E293B]">
+          {loading ? (
+            <p className="text-[#A0AEC0] text-center py-4">
+              Loading contacts...
+            </p>
+          ) : (
+            <ContactTable contacts={contacts} onDelete={deleteContact} />
+          )}
+        </div>
 
-      {/* Import Modal */}
-      {showImport && (
-        <ImportContactsModal
-          list={{ id: listId, name: "Your list name", emails: contacts.map(c => c.email) }}
-          onClose={() => setShowImport(false)}
-          onImported={() => fetchContacts()}
-        />
-      )}
+        {/* Import Modal */}
+        {showImport && (
+          <ImportContactsModal
+            list={{
+              id: listId,
+              name: 'Your list name',
+              emails: contacts.map((c) => c.email),
+            }}
+            onClose={() => setShowImport(false)}
+            onImported={() => fetchContacts()}
+          />
+        )}
+      </div>
     </div>
   );
 };
