@@ -8,6 +8,8 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import time
 from typing import List
+from urllib.parse import quote_plus
+import re
 
 from config import campaigns_collection, mails_collection
 from routes.contacts import contact_lists_collection
@@ -44,6 +46,30 @@ USERS = {
 BATCH_SIZE = 20
 BATCH_DELAY = 2  # sec
 
+# --- Funkcija koja injektira tracking pixel i trackable linkove ---
+def inject_tracking(html_template: str, recipient_email: str, campaign_id: str) -> str:
+    """
+    Zamijeni univerzalno:
+    1. Tracking pixel
+    2. Sve <a href="..."> linkove u emailu da idu preko track_click endpointa
+    """
+    email_enc = quote_plus(recipient_email)
+    campaign_enc = quote_plus(campaign_id)
+
+    # --- Tracking pixel ---
+    html_template = html_template.replace(
+        "{{tracking_pixel}}",
+        f"https://mailtracker-7jvy.onrender.com/track_open?email={email_enc}&campaign_id={campaign_enc}"
+    )
+
+    # --- Trackable links: traži sve <a href="..."> i zamijeni URL ---
+    def replace_link(match):
+        url = match.group(1)
+        return f'href="https://mailtracker-7jvy.onrender.com/track_click?email={email_enc}&campaign_id={campaign_enc}&link={quote_plus(url)}"'
+
+    html_template = re.sub(r'href="([^"]+)"', replace_link, html_template)
+
+    return html_template
 
 # --- Funkcija koja šalje pojedinačne mailove ---
 def send_email_to_recipient(user_id: str, recipient: str, subject: str, html_content: str) -> bool:
@@ -60,24 +86,39 @@ def send_email_to_recipient(user_id: str, recipient: str, subject: str, html_con
         with smtplib.SMTP_SSL(account_info["smtp_host"], account_info["smtp_port"]) as server:
             server.login(user_info["email"], account_info["password"])
             server.send_message(msg)
+        print(f"[SENT] Mail poslan: {recipient}")
         return True
     except Exception as e:
         print(f"[ERROR] Slanje na {recipient} nije uspjelo: {e}")
         return False
 
-
-# --- Funkcija za batch slanje mailova ---
-def send_emails_in_batches(user_id: str, recipients: List[str], subject: str, html_content: str) -> int:
+# --- Funkcija za batch slanje mailova s trackingom ---
+def send_emails_in_batches(user_id: str, contacts: List[dict], subject: str, html_template: str, campaign_id: str) -> int:
     sent_count = 0
-    for i in range(0, len(recipients), BATCH_SIZE):
-        batch = recipients[i:i+BATCH_SIZE]
-        for recipient in batch:
-            if send_email_to_recipient(user_id, recipient, subject, html_content):
+    for i in range(0, len(contacts), BATCH_SIZE):
+        batch = contacts[i:i+BATCH_SIZE]
+        for c in batch:
+            recipient = c.get("email")
+            if not recipient:
+                continue
+            
+            # --- Inject tracking pixel i trackable linkove ---
+            tracked_html = inject_tracking(html_template, recipient, campaign_id)
+
+            if send_email_to_recipient(user_id, recipient, subject, tracked_html):
                 sent_count += 1
-        if i + BATCH_SIZE < len(recipients):
+
+                # --- Pohrana maila u DB s trackiranim HTML-om ---
+                mails_collection.insert_one({
+                    "campaign_id": str_to_objectid(campaign_id),
+                    "recipient": recipient,
+                    "subject": subject,
+                    "html_content": tracked_html,
+                    "sent_at": datetime.utcnow()
+                })
+        if i + BATCH_SIZE < len(contacts):
             time.sleep(BATCH_DELAY)
     return sent_count
-
 
 # --- CREATE CAMPAIGN AND SEND MAILS ---
 @bp.route("/create_campaign", methods=["POST"])
@@ -110,28 +151,15 @@ def create_campaign():
         return jsonify({"status": "error", "message": "Contact list not found"}), 404
 
     contacts = contact_list_obj["contacts"]
-    recipients = [c["email"] for c in contacts if c.get("email")]
 
-    # --- Slanje mailova ---
-    emails_sent = send_emails_in_batches(user, recipients, subject, html_template)
-
-    # --- Pohrana mailova ---
-    for c in contacts:
-        if c.get("email") in recipients:
-            mails_collection.insert_one({
-                "campaign_id": str_to_objectid(campaign_id),
-                "recipient": c["email"],
-                "subject": subject,
-                "html_content": html_template,
-                "sent_at": datetime.utcnow()
-            })
+    # --- Slanje mailova s trackingom ---
+    emails_sent = send_emails_in_batches(user, contacts, subject, html_template, campaign_id)
 
     return jsonify({
         "status": "ok",
         "campaign_id": campaign_id,
         "emails_sent": emails_sent
     })
-
 
 # --- GET ALL CAMPAIGNS ---
 @bp.route("/", methods=["GET"])

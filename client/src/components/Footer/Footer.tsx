@@ -7,9 +7,10 @@ import { FaTwitter, FaLinkedin, FaGithub } from 'react-icons/fa';
 const Footer: React.FC = () => {
   return (
     <footer className="bg-[#0B1E1E] text-[#BCCCDC] py-12 px-6 md:px-12">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between gap-8">
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-center md:justify-between items-center md:items-start gap-12 md:gap-8">
+
         {/* Logo + About */}
-        <div className="flex-1 space-y-4">
+        <div className="flex-1 text-center md:text-left space-y-4">
           <h2 className="text-2xl font-bold text-[#E0A930]">Gules</h2>
           <p className="text-sm md:text-base">
             Profesionalni alat za email marketing, upravljanje kampanjama i kontakte. Sve na jednom mjestu.
@@ -17,8 +18,8 @@ const Footer: React.FC = () => {
         </div>
 
         {/* Links */}
-        <div className="flex-1 flex flex-col sm:flex-row justify-between gap-6">
-          <div className="space-y-2">
+        <div className="flex-1 flex flex-col sm:flex-row justify-center md:justify-between gap-8 w-full md:w-auto">
+          <div className="space-y-2 text-center sm:text-left">
             <h3 className="font-semibold text-white">Product</h3>
             <ul className="space-y-1">
               <li><Link href="/features" className="hover:text-[#25B9C4] transition-colors">Features</Link></li>
@@ -26,7 +27,7 @@ const Footer: React.FC = () => {
               <li><Link href="/dashboard" className="hover:text-[#25B9C4] transition-colors">Dashboard</Link></li>
             </ul>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-2 text-center sm:text-left">
             <h3 className="font-semibold text-white">Company</h3>
             <ul className="space-y-1">
               <li><Link href="/about" className="hover:text-[#25B9C4] transition-colors">About Us</Link></li>
@@ -37,7 +38,7 @@ const Footer: React.FC = () => {
         </div>
 
         {/* Socials */}
-        <div className="flex-1 space-y-2">
+        <div className="flex-1 flex flex-col items-center md:items-start space-y-2">
           <h3 className="font-semibold text-white">Follow us</h3>
           <div className="flex gap-4 mt-2 text-white">
             <Link href="https://twitter.com" target="_blank" className="hover:text-[#1DA1F2] transition-colors"><FaTwitter size={24} /></Link>
@@ -45,6 +46,7 @@ const Footer: React.FC = () => {
             <Link href="https://github.com" target="_blank" className="hover:text-[#6e5494] transition-colors"><FaGithub size={24} /></Link>
           </div>
         </div>
+
       </div>
 
       <div className="mt-12 border-t border-[#1F2937] pt-6 text-center text-sm text-[#A0AEC0]">
