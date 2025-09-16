@@ -6,6 +6,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import ContactTable from '@/components/ContactList/ContactListTable';
 import AddContactForm from '@/components/ContactList/AddContactForm';
 import ImportContactsModal from '@/components/ContactList/ImportContactsModal';
+import { motion } from 'framer-motion';
 
 const ContactListPage = () => {
   const { id } = useParams();
@@ -29,34 +30,47 @@ const ContactListPage = () => {
   if (!id) return <p>Invalid list ID</p>;
 
   return (
-    <div className="min-h-screen p-8 bg-[#080D10] text-white">
-      <button
+    <div className="min-h-screen p-8 bg-[#080D10] text-white flex flex-col gap-6">
+      {/* Back Button */}
+      <motion.button
         onClick={() => router.push('/contacts')}
-        className="mb-4 bg-[#2979FF] px-4 py-2 rounded hover:bg-[#1E63D8]"
+        className="bg-[#2979FF] px-4 py-2 rounded hover:bg-[#1E63D8] w-max"
+        whileHover={{ scale: 1.05 }}
       >
         Back to Lists
-      </button>
+      </motion.button>
 
-      <h1 className="text-3xl font-bold text-[#FFBD00] mb-4">Contact List</h1>
+      {/* Header */}
+      <motion.h1
+        className="text-3xl font-bold text-[#FFBD00] mb-4"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        Contact List
+      </motion.h1>
 
+      {/* Add Contact Form */}
       <AddContactForm onAdd={addContact} />
 
+      {/* Import Button */}
       <button
         onClick={() => setShowImport(true)}
-        className="mb-4 bg-[#FFBD00] text-black px-4 py-2 rounded hover:bg-[#E6AC00]"
+        className="bg-[#FFBD00] text-black px-4 py-2 rounded hover:bg-[#E6AC00] w-max"
       >
         Import CSV/Excel
       </button>
 
-      {loading ? <p>Loading contacts...</p> : (
+      {/* Contacts Table */}
+      {loading ? <p className="text-[#A0AEC0]">Loading contacts...</p> : (
         <ContactTable contacts={contacts} onDelete={deleteContact} />
       )}
 
+      {/* Import Modal */}
       {showImport && (
         <ImportContactsModal
           list={{ id: listId, name: "Your list name", emails: contacts.map(c => c.email) }}
           onClose={() => setShowImport(false)}
-          onImported={() => fetchContacts()} // refresha listu kontakata nakon importa
+          onImported={() => fetchContacts()}
         />
       )}
     </div>
