@@ -10,6 +10,7 @@ import time
 from typing import List
 from urllib.parse import quote_plus
 import re
+from bson import ObjectId
 
 from config import campaigns_collection, mails_collection
 from routes.contacts import contact_lists_collection
@@ -94,23 +95,18 @@ def send_email_to_recipient(user_id: str, recipient: str, subject: str, html_con
 # --- Funkcija za batch slanje mailova s trackingom ---
 def send_emails_in_batches(user_id: str, contacts: List[dict], subject: str, html_template: str, campaign_id: str) -> int:
     sent_count = 0
+    campaign_obj_id = ObjectId(campaign_id)  # Dodaj ovo!
     for i in range(0, len(contacts), BATCH_SIZE):
         batch = contacts[i:i+BATCH_SIZE]
         for c in batch:
             recipient = c.get("email")
             if not recipient:
                 continue
-            
-            # --- Inject tracking pixel i trackable linkove ---
             tracked_html = inject_tracking(html_template, recipient, campaign_id)
-
             if send_email_to_recipient(user_id, recipient, subject, tracked_html):
                 sent_count += 1
-
-                # --- Pohrana maila u DB s trackiranim HTML-om ---
                 mails_collection.insert_one({
-                    "campaign_id": campaign_id,  # spremi kao string, ne ObjectId
-
+                    "campaign_id": campaign_obj_id,  # spremi kao ObjectId!
                     "recipient": recipient,
                     "subject": subject,
                     "html_content": tracked_html,
@@ -169,8 +165,14 @@ def get_all_campaigns():
     for c in campaigns:
         campaign_id = c["_id"]
         sent_count = mails_collection.count_documents({"campaign_id": campaign_id})
-        opened_count = mails_collection.count_documents({"campaign_id": campaign_id, "opened_at": {"$exists": True}})
-        clicked_count = sum([m.get("click_count", 0) for m in mails_collection.find({"campaign_id": campaign_id})])
+        opened_count = mails_collection.count_documents({
+            "campaign_id": campaign_id,
+            "opened_at": {"$exists": True}
+        })
+        clicked_count = sum([
+            m.get("click_count", 0)
+            for m in mails_collection.find({"campaign_id": campaign_id})
+        ])
 
         result.append({
             "id": str(campaign_id),
@@ -190,28 +192,31 @@ def get_all_campaigns():
 def track_open():
     email = request.args.get("email")
     campaign_id = request.args.get("campaign_id")
-    mail = mails_collection.find_one({"campaign_id": campaign_id, "recipient": email})
+    try:
+        campaign_obj_id = ObjectId(campaign_id)
+    except:
+        campaign_obj_id = campaign_id  # fallback ako nije validan ObjectId
+    mail = mails_collection.find_one({"campaign_id": campaign_obj_id, "recipient": email})
     if mail:
         mails_collection.update_one(
             {"_id": mail["_id"]},
             {"$set": {"opened_at": datetime.utcnow()}}
         )
-        # Ispis u terminal
         print(f"[OPEN] Email otvoren od strane: {email}, kampanja: {campaign_id}")
     else:
         print(f"[OPEN] Mail nije pronađen za {email} i kampanju {campaign_id}")
     return "", 200
 
-
-
-
-# track_click.py
 @bp.route("/track_click")
 def track_click():
     email = request.args.get("email")
     campaign_id = request.args.get("campaign_id")
     link = request.args.get("link")
-    mail = mails_collection.find_one({"campaign_id": campaign_id, "recipient": email})
+    try:
+        campaign_obj_id = ObjectId(campaign_id)
+    except:
+        campaign_obj_id = campaign_id
+    mail = mails_collection.find_one({"campaign_id": campaign_obj_id, "recipient": email})
     if mail:
         mails_collection.update_one(
             {"_id": mail["_id"]},
