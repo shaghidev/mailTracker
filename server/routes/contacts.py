@@ -16,10 +16,11 @@ def get_contact_lists():
     lists = list(contact_lists_collection.find())
     result = []
     for l in lists:
+        emails = [c["email"] for c in l.get("contacts", []) if "email" in c]  # uzmi samo email polje
         result.append({
             "id": str(l["_id"]),
             "name": l["name"],
-            "contacts": l.get("contacts", [])
+            "emails": emails
         })
     return jsonify(result)
 

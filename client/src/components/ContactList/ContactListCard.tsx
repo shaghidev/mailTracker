@@ -3,18 +3,23 @@ import { ContactList } from '@/types/Contact';
 
 interface Props {
   list: ContactList;
-  onView: () => void; // promijeni tip, više ne prima ContactList
+  onView: () => void; // više ne prima ContactList
   onDelete: (id: string) => void;
 }
 
 const ContactListCard: React.FC<Props> = ({ list, onView, onDelete }) => (
   <li className="bg-[#1F2937] p-6 rounded-2xl shadow-lg hover:shadow-xl transition-shadow cursor-pointer list-none">
     <h2 className="font-bold text-xl mb-2 text-[#FFBD00]">{list.name}</h2>
+    
+    {/* Ukupan broj kontakata */}
+    <p className="text-[#A0AEC0]">{list.emails.length} contacts</p>
+
+
     <p className="text-[#A0AEC0]">Click to view contacts</p>
     <div className="mt-4 flex gap-2">
       <button
         className="flex-1 bg-[#2979FF] py-2 rounded-lg hover:bg-[#1E63D8] transition-colors"
-        onClick={onView} // sada je tip void
+        onClick={onView}
       >
         View
       </button>
@@ -27,6 +32,5 @@ const ContactListCard: React.FC<Props> = ({ list, onView, onDelete }) => (
     </div>
   </li>
 );
-
 
 export default ContactListCard;
