@@ -44,8 +44,8 @@ USERS = {
     "newsletter": {"email": "newsletter@git.hr", "account": "git"}
 }
 
-BATCH_SIZE = 20
-BATCH_DELAY = 2  # sec
+BATCH_SIZE = 5
+BATCH_DELAY = 10
 
 # --- Funkcija koja injektira tracking pixel i trackable linkove ---
 def inject_tracking(html_template: str, recipient_email: str, campaign_id: str) -> str:
@@ -93,9 +93,9 @@ def send_email_to_recipient(user_id: str, recipient: str, subject: str, html_con
         return False
 
 # --- Funkcija za batch slanje mailova s trackingom ---
-def send_emails_in_batches(user_id: str, contacts: List[dict], subject: str, html_template: str, campaign_id: str) -> int:
+def send_emails_in_batches(user_id, contacts, subject, html_template, campaign_id):
     sent_count = 0
-    campaign_obj_id = ObjectId(campaign_id)  # Dodaj ovo!
+    campaign_obj_id = ObjectId(campaign_id)
     for i in range(0, len(contacts), BATCH_SIZE):
         batch = contacts[i:i+BATCH_SIZE]
         for c in batch:
@@ -103,16 +103,19 @@ def send_emails_in_batches(user_id: str, contacts: List[dict], subject: str, htm
             if not recipient:
                 continue
             tracked_html = inject_tracking(html_template, recipient, campaign_id)
-            if send_email_to_recipient(user_id, recipient, subject, tracked_html):
-                sent_count += 1
-                mails_collection.insert_one({
-                    "campaign_id": campaign_obj_id,
-                    "recipient": recipient,
-                    "subject": subject,
-                    "html_content": tracked_html,
-                    "sent_at": datetime.utcnow(),
-                    "click_count": 0  # Dodaj ovo!
-                })
+            try:
+                if send_email_to_recipient(user_id, recipient, subject, tracked_html):
+                    sent_count += 1
+                    mails_collection.insert_one({
+                        "campaign_id": campaign_obj_id,
+                        "recipient": recipient,
+                        "subject": subject,
+                        "html_content": tracked_html,
+                        "sent_at": datetime.utcnow(),
+                        "click_count": 0
+                    })
+            except Exception as e:
+                print(f"[ERROR] Slanje na {recipient} nije uspjelo: {e}")
         if i + BATCH_SIZE < len(contacts):
             time.sleep(BATCH_DELAY)
     return sent_count
