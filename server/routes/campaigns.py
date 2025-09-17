@@ -44,7 +44,7 @@ USERS = {
     "newsletter": {"email": "newsletter@git.hr", "account": "git"}
 }
 
-BATCH_SIZE = 5
+BATCH_SIZE = 1
 BATCH_DELAY = 10
 
 # --- Funkcija koja injektira tracking pixel i trackable linkove ---
