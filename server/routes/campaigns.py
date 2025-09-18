@@ -97,16 +97,22 @@ def send_email_to_recipient(user_id: str, recipient: str, subject: str, html_con
 def send_emails_in_batches(user_id, contacts, subject, html_template, campaign_id):
     sent_count = 0
     campaign_obj_id = ObjectId(campaign_id)
-    for i in range(0, len(contacts), BATCH_SIZE):
+    total = len(contacts)
+    print(f"[BATCH] Počinjem slanje {total} mailova, batch_size={BATCH_SIZE}, delay={BATCH_DELAY}s")
+    for i in range(0, total, BATCH_SIZE):
         batch = contacts[i:i+BATCH_SIZE]
+        print(f"[BATCH] Batch {i//BATCH_SIZE+1}: šaljem {len(batch)} mailova ({i+1}-{i+len(batch)})")
         for c in batch:
             recipient = c.get("email")
             if not recipient:
+                print(f"[SKIP] Kontakt bez emaila: {c}")
                 continue
             tracked_html = inject_tracking(html_template, recipient, campaign_id)
             try:
+                print(f"[SEND] Pokušavam poslati mail na: {recipient}")
                 if send_email_to_recipient(user_id, recipient, subject, tracked_html):
                     sent_count += 1
+                    print(f"[SUCCESS] Mail poslan: {recipient}")
                     mails_collection.insert_one({
                         "campaign_id": campaign_obj_id,
                         "recipient": recipient,
@@ -115,15 +121,23 @@ def send_emails_in_batches(user_id, contacts, subject, html_template, campaign_i
                         "sent_at": datetime.utcnow(),
                         "click_count": 0
                     })
+                else:
+                    print(f"[FAIL] Mail NIJE poslan: {recipient}")
             except Exception as e:
                 print(f"[ERROR] Slanje na {recipient} nije uspjelo: {e}")
-        if i + BATCH_SIZE < len(contacts):
+        print(f"[BATCH] Batch {i//BATCH_SIZE+1} gotov, čekam {BATCH_DELAY}s")
+        if i + BATCH_SIZE < total:
             time.sleep(BATCH_DELAY)
+    print(f"[BATCH] Slanje batcha završeno, ukupno poslanih: {sent_count}/{total}")
     return sent_count
 
 def send_emails_background(user_id, contacts, subject, html_template, campaign_id):
-    # Ova funkcija radi isto kao send_emails_in_batches
-    send_emails_in_batches(user_id, contacts, subject, html_template, campaign_id)
+    try:
+        print(f"[BG] Pokrećem slanje mailova u pozadini za kampanju {campaign_id}, broj kontakata: {len(contacts)}")
+        send_emails_in_batches(user_id, contacts, subject, html_template, campaign_id)
+        print(f"[BG] Slanje mailova u pozadini završeno za kampanju {campaign_id}")
+    except Exception as e:
+        print(f"[BG ERROR] Greška u background slanju: {e}")
 
 # --- CREATE CAMPAIGN AND SEND MAILS ---
 @bp.route("/create_campaign", methods=["POST"])
@@ -135,10 +149,12 @@ def create_campaign():
     user = data.get("user", "stream")
     contact_list_id = data.get("contact_list")
 
+    print(f"[CREATE] Primljen zahtjev za kreiranje kampanje: {name}, korisnik: {user}, lista: {contact_list_id}")
+
     if not name or not subject or not html_template or not contact_list_id:
+        print("[CREATE] Greška: Nedostaju polja")
         return jsonify({"status": "error", "message": "Missing fields"}), 400
 
-    # --- Spremi kampanju ---
     campaign = {
         "name": name,
         "subject": subject,
@@ -149,25 +165,28 @@ def create_campaign():
     }
     result = campaigns_collection.insert_one(campaign)
     campaign_id = str(result.inserted_id)
+    print(f"[CREATE] Kampanja spremljena u bazu, id: {campaign_id}")
 
-    # --- Dohvati kontakte ---
     contact_list_obj = contact_lists_collection.find_one({"_id": str_to_objectid(contact_list_id)})
     if not contact_list_obj or "contacts" not in contact_list_obj:
+        print("[CREATE] Greška: Lista kontakata nije pronađena ili nema kontakata")
         return jsonify({"status": "error", "message": "Contact list not found"}), 404
 
     contacts = contact_list_obj["contacts"]
+    print(f"[CREATE] Broj kontakata u listi: {len(contacts)}")
 
-    # --- Pokreni slanje mailova u pozadini ---
     threading.Thread(
         target=send_emails_background,
         args=(user, contacts, subject, html_template, campaign_id),
         daemon=True
     ).start()
 
+    print(f"[CREATE] Pokrenuto slanje mailova u pozadini za kampanju {campaign_id}")
+
     return jsonify({
         "status": "ok",
         "campaign_id": campaign_id,
-        "emails_sent": 0,  # Slanje se radi u pozadini!
+        "emails_sent": 0,
         "message": "Slanje mailova je pokrenuto u pozadini."
     })
 
