@@ -175,11 +175,8 @@ def create_campaign():
     contacts = contact_list_obj["contacts"]
     print(f"[CREATE] Broj kontakata u listi: {len(contacts)}")
 
-    threading.Thread(
-        target=send_emails_background,
-        args=(user, contacts, subject, html_template, campaign_id),
-        daemon=True
-    ).start()
+    # Umjesto threadinga, pozovi direktno:
+    send_emails_background(user, contacts, subject, html_template, campaign_id)
 
     print(f"[CREATE] Pokrenuto slanje mailova u pozadini za kampanju {campaign_id}")
 
