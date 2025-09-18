@@ -11,6 +11,7 @@ from typing import List
 from urllib.parse import quote_plus
 import re
 from bson import ObjectId
+import threading
 
 from config import campaigns_collection, mails_collection
 from routes.contacts import contact_lists_collection
@@ -120,6 +121,10 @@ def send_emails_in_batches(user_id, contacts, subject, html_template, campaign_i
             time.sleep(BATCH_DELAY)
     return sent_count
 
+def send_emails_background(user_id, contacts, subject, html_template, campaign_id):
+    # Ova funkcija radi isto kao send_emails_in_batches
+    send_emails_in_batches(user_id, contacts, subject, html_template, campaign_id)
+
 # --- CREATE CAMPAIGN AND SEND MAILS ---
 @bp.route("/create_campaign", methods=["POST"])
 def create_campaign():
@@ -152,13 +157,18 @@ def create_campaign():
 
     contacts = contact_list_obj["contacts"]
 
-    # --- Slanje mailova s trackingom ---
-    emails_sent = send_emails_in_batches(user, contacts, subject, html_template, campaign_id)
+    # --- Pokreni slanje mailova u pozadini ---
+    threading.Thread(
+        target=send_emails_background,
+        args=(user, contacts, subject, html_template, campaign_id),
+        daemon=True
+    ).start()
 
     return jsonify({
         "status": "ok",
         "campaign_id": campaign_id,
-        "emails_sent": emails_sent
+        "emails_sent": 0,  # Slanje se radi u pozadini!
+        "message": "Slanje mailova je pokrenuto u pozadini."
     })
 
 # --- GET ALL CAMPAIGNS ---
