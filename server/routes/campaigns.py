@@ -45,8 +45,8 @@ USERS = {
     "newsletter": {"email": "newsletter@git.hr", "account": "git"}
 }
 
-BATCH_SIZE = 1
-BATCH_DELAY = 10
+BATCH_SIZE = 3
+BATCH_DELAY = 30
 
 # --- Funkcija koja injektira tracking pixel i trackable linkove ---
 def inject_tracking(html_template: str, recipient_email: str, campaign_id: str) -> str:
@@ -93,6 +93,35 @@ def send_email_to_recipient(user_id: str, recipient: str, subject: str, html_con
         print(f"[ERROR] Slanje na {recipient} nije uspjelo: {e}")
         return False
 
+def send_email_batch(user_id: str, recipients: list, subject: str, html_content: str) -> bool:
+    try:
+        user_info = USERS[user_id]
+        account_info = EMAIL_ACCOUNTS[user_info["account"]]
+
+        print(f"[BATCH-DEBUG] Pripremam batch: user={user_info['email']}, smtp_host={account_info['smtp_host']}, smtp_port={account_info['smtp_port']}, broj primatelja={len(recipients)}")
+        print(f"[BATCH-DEBUG] BCC lista: {recipients}")
+
+        msg = MIMEMultipart()
+        msg['From'] = user_info["email"]
+        msg['To'] = user_info["email"]
+        msg['Subject'] = subject
+        msg.attach(MIMEText(html_content, 'html'))
+        msg['Bcc'] = ", ".join(recipients)
+
+        print(f"[BATCH-DEBUG] Spajam se na SMTP server...")
+        with smtplib.SMTP_SSL(account_info["smtp_host"], account_info["smtp_port"]) as server:
+            print(f"[BATCH-DEBUG] Login na SMTP kao {user_info['email']}")
+            server.login(user_info["email"], account_info["password"])
+            print(f"[BATCH-DEBUG] Šaljem batch poruku...")
+            server.send_message(msg)
+        print(f"[SENT] Batch poslan na: {recipients}")
+        return True
+    except Exception as e:
+        print(f"[ERROR] Slanje batcha nije uspjelo: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
 # --- Funkcija za batch slanje mailova s trackingom ---
 def send_emails_in_batches(user_id, contacts, subject, html_template, campaign_id):
     sent_count = 0
@@ -100,33 +129,31 @@ def send_emails_in_batches(user_id, contacts, subject, html_template, campaign_i
     total = len(contacts)
     print(f"[BATCH] Počinjem slanje {total} mailova, batch_size={BATCH_SIZE}, delay={BATCH_DELAY}s")
     for i in range(0, total, BATCH_SIZE):
-        batch = contacts[i:i+BATCH_SIZE]
-        print(f"[BATCH] Batch {i//BATCH_SIZE+1}: šaljem {len(batch)} mailova ({i+1}-{i+len(batch)})")
-        for c in batch:
-            recipient = c.get("email")
-            if not recipient:
-                print(f"[SKIP] Kontakt bez emaila: {c}")
-                continue
-            tracked_html = inject_tracking(html_template, recipient, campaign_id)
-            try:
-                print(f"[SEND] Pokušavam poslati mail na: {recipient}")
-                if send_email_to_recipient(user_id, recipient, subject, tracked_html):
-                    sent_count += 1
-                    print(f"[SUCCESS] Mail poslan: {recipient}")
-                    mails_collection.insert_one({
-                        "campaign_id": campaign_obj_id,
-                        "recipient": recipient,
-                        "subject": subject,
-                        "html_content": tracked_html,
-                        "sent_at": datetime.utcnow(),
-                        "click_count": 0
-                    })
-                else:
-                    print(f"[FAIL] Mail NIJE poslan: {recipient}")
-            except Exception as e:
-                print(f"[ERROR] Slanje na {recipient} nije uspjelo: {e}")
+        print(f"[BATCH-DEBUG] Batch {i//BATCH_SIZE+1}: indexi {i} do {i+BATCH_SIZE-1}")
+        batch_contacts = contacts[i:i+BATCH_SIZE]
+        batch_emails = [c.get("email") for c in batch_contacts if c.get("email")]
+        print(f"[BATCH-DEBUG] Batch emails: {batch_emails}")
+        if not batch_emails:
+            print(f"[SKIP] Batch bez emaila: {batch_contacts}")
+            continue
+        tracked_html = inject_tracking(html_template, batch_emails[0], campaign_id)
+        print(f"[SEND] Pokušavam poslati batch na: {batch_emails}")
+        if send_email_batch(user_id, batch_emails, subject, tracked_html):
+            sent_count += len(batch_emails)
+            for recipient in batch_emails:
+                mails_collection.insert_one({
+                    "campaign_id": campaign_obj_id,
+                    "recipient": recipient,
+                    "subject": subject,
+                    "html_content": tracked_html,
+                    "sent_at": datetime.utcnow(),
+                    "click_count": 0
+                })
+        else:
+            print(f"[FAIL] Batch NIJE poslan: {batch_emails}")
         print(f"[BATCH] Batch {i//BATCH_SIZE+1} gotov, čekam {BATCH_DELAY}s")
         if i + BATCH_SIZE < total:
+            print(f"[BATCH-DEBUG] Spavam {BATCH_DELAY}s prije sljedećeg batcha...")
             time.sleep(BATCH_DELAY)
     print(f"[BATCH] Slanje batcha završeno, ukupno poslanih: {sent_count}/{total}")
     return sent_count
