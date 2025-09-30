@@ -26,5 +26,13 @@
       © 2025 Vaša tvrtka
     </div>
   </div>
+  <script>
+    print("[DEBUG] Prije login")
+    server.login(user_info["email"], account_info["password"])
+    print("[DEBUG] Nakon login")
+    print("[DEBUG] Prije send_message")
+    server.send_message(msg)
+    print("[DEBUG] Nakon send_message")
+  </script>
 </body>
 </html>
